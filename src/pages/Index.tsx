@@ -77,7 +77,7 @@ const Index = () => {
             setView({ screen: 'daywork', projectId: project.id, dayworkId: d.id });
           }}
           onDeleteDaywork={(id) => deleteDaywork(project.id, id)}
-          onGeneratePdf={() => generateDayworkPdf(project, company, siteManagers)}
+          onGeneratePdf={(dayworkIds) => generateDayworkPdf(project, company, siteManagers, dayworkIds)}
         />
       </div>
     );

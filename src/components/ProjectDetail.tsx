@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Calendar, Clock, ChevronRight, Trash2, FileText } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar, Clock, ChevronRight, Trash2, FileText, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Project, dayworkTotalHours } from '@/lib/types';
 import { format } from 'date-fns';
 import {
@@ -15,7 +16,7 @@ interface ProjectDetailProps {
   onSelectDaywork: (id: string) => void;
   onAddDaywork: (data: { date: string; siteContactName: string; siteContactPhone: string; purchaseOrder: string }) => void;
   onDeleteDaywork: (id: string) => void;
-  onGeneratePdf: () => void;
+  onGeneratePdf: (dayworkIds: string[]) => void;
 }
 
 export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onDeleteDaywork, onGeneratePdf }: ProjectDetailProps) {
@@ -24,6 +25,8 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [po, setPo] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectMode, setSelectMode] = useState(false);
 
   const handleAdd = () => {
     if (!date) return;
@@ -32,6 +35,21 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   };
 
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const handleMultiPdf = () => {
+    if (selectedIds.size === 0) return;
+    onGeneratePdf(Array.from(selectedIds));
+    setSelectedIds(new Set());
+    setSelectMode(false);
+  };
 
   return (
     <div className="min-h-screen pb-24">
@@ -44,9 +62,24 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
             <h1 className="text-xl font-bold tracking-tight">{project.name}</h1>
             <p className="text-sm text-muted-foreground mt-0.5">{project.client}{project.siteAddress ? ` · ${project.siteAddress}` : ''}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={onGeneratePdf} className="gap-1.5 active-scale">
-            <FileText className="w-4 h-4" /> PDF
-          </Button>
+          {sortedDays.length > 0 && (
+            <Button
+              variant={selectMode ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => {
+                if (selectMode && selectedIds.size > 0) {
+                  handleMultiPdf();
+                } else {
+                  setSelectMode(!selectMode);
+                  setSelectedIds(new Set());
+                }
+              }}
+              className="gap-1.5 active-scale"
+            >
+              <FileText className="w-4 h-4" />
+              {selectMode ? (selectedIds.size > 0 ? `PDF (${selectedIds.size})` : 'Cancel') : 'Multi PDF'}
+            </Button>
+          )}
         </div>
       </header>
 
@@ -65,23 +98,42 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
           const totalHrs = dayworkTotalHours(dw);
           return (
             <div key={dw.id} className="bg-card rounded-lg shadow-sm border p-4 active-scale cursor-pointer animate-fade-in"
-              style={{ animationDelay: `${i * 60}ms` }} onClick={() => onSelectDaywork(dw.id)}>
+              style={{ animationDelay: `${i * 60}ms` }}
+              onClick={() => selectMode ? toggleSelect(dw.id) : onSelectDaywork(dw.id)}>
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold">{format(new Date(dw.date + 'T00:00:00'), 'EEE, d MMM yyyy')}</h3>
-                  <div className="flex gap-4 mt-1.5">
-                    <span className="text-sm text-muted-foreground">{dw.tasks.length} task{dw.tasks.length !== 1 ? 's' : ''}</span>
-                    <span className="text-sm text-muted-foreground flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" /> {totalHrs.toFixed(1)}h
-                    </span>
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {selectMode && (
+                    <Checkbox
+                      checked={selectedIds.has(dw.id)}
+                      onCheckedChange={() => toggleSelect(dw.id)}
+                      onClick={e => e.stopPropagation()}
+                      className="h-5 w-5"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <h3 className="font-semibold">{format(new Date(dw.date + 'T00:00:00'), 'EEE, d MMM yyyy')}</h3>
+                    <div className="flex gap-4 mt-1.5">
+                      <span className="text-sm text-muted-foreground">{dw.tasks.length} task{dw.tasks.length !== 1 ? 's' : ''}</span>
+                      <span className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" /> {totalHrs.toFixed(1)}h
+                      </span>
+                    </div>
+                    {dw.siteContactName && <p className="text-xs text-muted-foreground mt-1">Contact: {dw.siteContactName}</p>}
                   </div>
-                  {dw.siteContactName && <p className="text-xs text-muted-foreground mt-1">Contact: {dw.siteContactName}</p>}
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={(e) => { e.stopPropagation(); onDeleteDaywork(dw.id); }}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  {!selectMode && (
+                    <>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={(e) => { e.stopPropagation(); onGeneratePdf([dw.id]); }}>
+                        <FileText className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={(e) => { e.stopPropagation(); onDeleteDaywork(dw.id); }}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </>
+                  )}
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </div>
               </div>
