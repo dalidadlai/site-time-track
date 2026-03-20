@@ -32,14 +32,16 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
       .sig-img { max-height: 60px; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; }
       .sig-line { border-bottom: 1px solid #333; height: 48px; margin-bottom: 6px; }
       .sig-label { font-size: 10px; color: #666; }
-      .header-bar { background: #c2702a; color: white; padding: 12px 16px; margin: -24px -24px 16px; }
-      .header-bar h1 { color: white; }
-      .company-info { font-size: 10px; color: rgba(255,255,255,0.85); line-height: 1.5; }
+      .header-bar { background: #c2702a; color: white; padding: 24px 28px 18px; margin: -24px -24px 0; }
+      .header-bar .company-name { font-size: 28px; font-weight: 700; color: white; letter-spacing: -0.3px; margin: 0 0 10px; line-height: 1.15; }
+      .header-bar .company-details { font-size: 10px; color: rgba(255,255,255,0.82); line-height: 1.6; letter-spacing: 0.2px; }
+      .header-divider { height: 3px; background: linear-gradient(to right, #a35a1f, #d4853a, #a35a1f); margin: 0 -24px 18px; }
       .day-total { background: #e8ddd0; padding: 8px 10px; font-weight: 700; font-size: 12px; margin-top: 8px; }
       .day-separator { border-top: 3px solid #c2702a; margin-top: 32px; padding-top: 16px; }
       @media print {
         body { padding: 0; }
-        .header-bar { margin: 0 0 16px; padding: 12px 16px; }
+        .header-bar { margin: 0 0 0; padding: 24px 28px 18px; }
+        .header-divider { margin: 0 0 18px; }
       }
     </style>
   `;
