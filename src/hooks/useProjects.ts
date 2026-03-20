@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Project, DayRecord, Task, Worker, generateId } from '@/lib/types';
+import { Project, DayworkRecord, Task, WorkerLog, generateId } from '@/lib/types';
 import { loadProjects, saveProjects } from '@/lib/store';
 
 export function useProjects() {
@@ -10,92 +10,77 @@ export function useProjects() {
     saveProjects(updated);
   }, []);
 
-  const addProject = useCallback((name: string, client: string, location: string) => {
-    const p: Project = { id: generateId(), name, client, location, days: [] };
+  const addProject = useCallback((name: string, client: string, siteAddress: string) => {
+    const p: Project = { id: generateId(), name, client, siteAddress, dayworks: [] };
     persist([...projects, p]);
     return p;
-  }, [projects, persist]);
-
-  const updateProject = useCallback((id: string, updates: Partial<Pick<Project, 'name' | 'client' | 'location'>>) => {
-    persist(projects.map(p => p.id === id ? { ...p, ...updates } : p));
   }, [projects, persist]);
 
   const deleteProject = useCallback((id: string) => {
     persist(projects.filter(p => p.id !== id));
   }, [projects, persist]);
 
-  const addDay = useCallback((projectId: string, date: string) => {
-    const day: DayRecord = { id: generateId(), date, tasks: [] };
-    persist(projects.map(p => p.id === projectId ? { ...p, days: [...p.days, day] } : p));
-    return day;
+  const addDaywork = useCallback((projectId: string, data: Omit<DayworkRecord, 'id' | 'tasks'>) => {
+    const dw: DayworkRecord = { ...data, id: generateId(), tasks: [] };
+    persist(projects.map(p => p.id === projectId ? { ...p, dayworks: [...p.dayworks, dw] } : p));
+    return dw;
   }, [projects, persist]);
 
-  const deleteDay = useCallback((projectId: string, dayId: string) => {
-    persist(projects.map(p => p.id === projectId ? { ...p, days: p.days.filter(d => d.id !== dayId) } : p));
-  }, [projects, persist]);
-
-  const addTask = useCallback((projectId: string, dayId: string, description: string) => {
-    const task: Task = { id: generateId(), description, workers: [] };
+  const updateDaywork = useCallback((projectId: string, dayworkId: string, updates: Partial<DayworkRecord>) => {
     persist(projects.map(p => p.id === projectId ? {
-      ...p, days: p.days.map(d => d.id === dayId ? { ...d, tasks: [...d.tasks, task] } : d)
+      ...p, dayworks: p.dayworks.map(d => d.id === dayworkId ? { ...d, ...updates } : d)
     } : p));
-    return task;
   }, [projects, persist]);
 
-  const updateTask = useCallback((projectId: string, dayId: string, taskId: string, description: string) => {
+  const deleteDaywork = useCallback((projectId: string, dayworkId: string) => {
+    persist(projects.map(p => p.id === projectId ? { ...p, dayworks: p.dayworks.filter(d => d.id !== dayworkId) } : p));
+  }, [projects, persist]);
+
+  const addTask = useCallback((projectId: string, dayworkId: string, task: Omit<Task, 'id' | 'workerLogs'>) => {
+    const t: Task = { ...task, id: generateId(), workerLogs: [] };
     persist(projects.map(p => p.id === projectId ? {
-      ...p, days: p.days.map(d => d.id === dayId ? {
-        ...d, tasks: d.tasks.map(t => t.id === taskId ? { ...t, description } : t)
+      ...p, dayworks: p.dayworks.map(d => d.id === dayworkId ? { ...d, tasks: [...d.tasks, t] } : d)
+    } : p));
+    return t;
+  }, [projects, persist]);
+
+  const deleteTask = useCallback((projectId: string, dayworkId: string, taskId: string) => {
+    persist(projects.map(p => p.id === projectId ? {
+      ...p, dayworks: p.dayworks.map(d => d.id === dayworkId ? { ...d, tasks: d.tasks.filter(t => t.id !== taskId) } : d)
+    } : p));
+  }, [projects, persist]);
+
+  const addWorkerLog = useCallback((projectId: string, dayworkId: string, taskId: string, log: Omit<WorkerLog, 'id'>) => {
+    const wl: WorkerLog = { ...log, id: generateId() };
+    persist(projects.map(p => p.id === projectId ? {
+      ...p, dayworks: p.dayworks.map(d => d.id === dayworkId ? {
+        ...d, tasks: d.tasks.map(t => t.id === taskId ? { ...t, workerLogs: [...t.workerLogs, wl] } : t)
       } : d)
     } : p));
   }, [projects, persist]);
 
-  const deleteTask = useCallback((projectId: string, dayId: string, taskId: string) => {
+  const updateWorkerLog = useCallback((projectId: string, dayworkId: string, taskId: string, logId: string, updates: Partial<WorkerLog>) => {
     persist(projects.map(p => p.id === projectId ? {
-      ...p, days: p.days.map(d => d.id === dayId ? { ...d, tasks: d.tasks.filter(t => t.id !== taskId) } : d)
-    } : p));
-  }, [projects, persist]);
-
-  const addWorker = useCallback((projectId: string, dayId: string, taskId: string, name: string) => {
-    const worker: Worker = { id: generateId(), name, startTime: '07:00', finishTime: '17:00', breakMinutes: 30 };
-    persist(projects.map(p => p.id === projectId ? {
-      ...p, days: p.days.map(d => d.id === dayId ? {
-        ...d, tasks: d.tasks.map(t => t.id === taskId ? { ...t, workers: [...t.workers, worker] } : t)
-      } : d)
-    } : p));
-  }, [projects, persist]);
-
-  const updateWorker = useCallback((projectId: string, dayId: string, taskId: string, workerId: string, updates: Partial<Worker>) => {
-    persist(projects.map(p => p.id === projectId ? {
-      ...p, days: p.days.map(d => d.id === dayId ? {
+      ...p, dayworks: p.dayworks.map(d => d.id === dayworkId ? {
         ...d, tasks: d.tasks.map(t => t.id === taskId ? {
-          ...t, workers: t.workers.map(w => w.id === workerId ? { ...w, ...updates } : w)
+          ...t, workerLogs: t.workerLogs.map(w => w.id === logId ? { ...w, ...updates } : w)
         } : t)
       } : d)
     } : p));
   }, [projects, persist]);
 
-  const deleteWorker = useCallback((projectId: string, dayId: string, taskId: string, workerId: string) => {
+  const deleteWorkerLog = useCallback((projectId: string, dayworkId: string, taskId: string, logId: string) => {
     persist(projects.map(p => p.id === projectId ? {
-      ...p, days: p.days.map(d => d.id === dayId ? {
-        ...d, tasks: d.tasks.map(t => t.id === taskId ? { ...t, workers: t.workers.filter(w => w.id !== workerId) } : t)
-      } : d)
-    } : p));
-  }, [projects, persist]);
-
-  const updateSignatures = useCallback((projectId: string, dayId: string, siteManager?: string, contractor?: string) => {
-    persist(projects.map(p => p.id === projectId ? {
-      ...p, days: p.days.map(d => d.id === dayId ? {
-        ...d, siteManagerSignature: siteManager ?? d.siteManagerSignature, contractorSignature: contractor ?? d.contractorSignature
+      ...p, dayworks: p.dayworks.map(d => d.id === dayworkId ? {
+        ...d, tasks: d.tasks.map(t => t.id === taskId ? { ...t, workerLogs: t.workerLogs.filter(w => w.id !== logId) } : t)
       } : d)
     } : p));
   }, [projects, persist]);
 
   return {
-    projects, addProject, updateProject, deleteProject,
-    addDay, deleteDay,
-    addTask, updateTask, deleteTask,
-    addWorker, updateWorker, deleteWorker,
-    updateSignatures,
+    projects, addProject, deleteProject,
+    addDaywork, updateDaywork, deleteDaywork,
+    addTask, deleteTask,
+    addWorkerLog, updateWorkerLog, deleteWorkerLog,
   };
 }

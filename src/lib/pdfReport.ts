@@ -1,7 +1,7 @@
-import { Project, DayRecord, calculateHours, taskTotalHours, dayTotalHours } from '@/lib/types';
+import { Project, CompanyProfile, SiteManager, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
 import { format } from 'date-fns';
 
-export function generateDayworkPdf(project: Project) {
+export function generateDayworkPdf(project: Project, company: CompanyProfile, siteManagers: SiteManager[]) {
   const printWindow = window.open('', '_blank');
   if (!printWindow) return;
 
@@ -11,57 +11,60 @@ export function generateDayworkPdf(project: Project) {
       body { font-family: 'Inter', Arial, sans-serif; color: #1a1a2e; padding: 24px; font-size: 11px; }
       .page { page-break-after: always; }
       .page:last-child { page-break-after: avoid; }
-      h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-      h2 { font-size: 14px; font-weight: 600; margin: 20px 0 8px; border-bottom: 2px solid #c2702a; padding-bottom: 4px; }
-      .meta { color: #666; font-size: 11px; margin-bottom: 16px; }
-      table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; }
-      th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
+      h1 { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+      h2 { font-size: 13px; font-weight: 600; margin: 16px 0 6px; border-bottom: 2px solid #c2702a; padding-bottom: 4px; }
+      .meta { color: #555; font-size: 10px; line-height: 1.6; }
+      .meta strong { color: #1a1a2e; }
+      table { width: 100%; border-collapse: collapse; margin: 6px 0 14px; }
+      th, td { border: 1px solid #ddd; padding: 5px 8px; text-align: left; }
       th { background: #f5f0eb; font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
       .total-row { font-weight: 600; background: #faf6f1; }
       .hours { text-align: right; font-variant-numeric: tabular-nums; }
+      .task-header { background: #f8f4ef; padding: 8px 10px; border: 1px solid #e5ddd3; border-bottom: none; margin-top: 14px; }
+      .task-header .label { font-size: 9px; text-transform: uppercase; color: #888; letter-spacing: 0.5px; }
+      .task-header .value { font-size: 11px; font-weight: 500; }
       .sig-section { display: flex; gap: 48px; margin-top: 40px; page-break-inside: avoid; }
       .sig-block { flex: 1; }
       .sig-line { border-bottom: 1px solid #333; height: 48px; margin-bottom: 6px; }
       .sig-label { font-size: 10px; color: #666; }
-      .header-bar { background: #c2702a; color: white; padding: 12px 16px; margin: -24px -24px 20px; }
+      .header-bar { background: #c2702a; color: white; padding: 12px 16px; margin: -24px -24px 16px; }
       .header-bar h1 { color: white; }
-      .header-bar .meta { color: rgba(255,255,255,0.85); }
+      .company-info { font-size: 10px; color: rgba(255,255,255,0.85); line-height: 1.5; }
+      .day-total { background: #e8ddd0; padding: 8px 10px; font-weight: 700; font-size: 12px; margin-top: 8px; }
       @media print {
         body { padding: 0; }
-        .header-bar { margin: 0 0 20px; padding: 12px 16px; }
+        .header-bar { margin: 0 0 16px; padding: 12px 16px; }
       }
     </style>
   `;
 
-  const sortedDays = [...project.days].sort((a, b) => a.date.localeCompare(b.date));
+  const sortedDays = [...project.dayworks].sort((a, b) => a.date.localeCompare(b.date));
 
-  const dayPages = sortedDays.map((day, idx) => {
-    const totalHrs = dayTotalHours(day);
-    const taskRows = day.tasks.map(task => {
-      const workerRows = task.workers.map(w => {
-        const hrs = calculateHours(w);
-        return `<tr>
-          <td>${w.name}</td>
-          <td>${w.startTime}</td>
-          <td>${w.finishTime}</td>
-          <td class="hours">${w.breakMinutes} min</td>
-          <td class="hours">${hrs.toFixed(1)}</td>
-        </tr>`;
+  const dayPages = sortedDays.map((dw, idx) => {
+    const totalHrs = dayworkTotalHours(dw);
+
+    const taskSections = dw.tasks.map(task => {
+      const sm = siteManagers.find(s => s.id === task.siteManagerId);
+      const tHrs = taskTotalHours(task);
+
+      const workerRows = task.workerLogs.map(log => {
+        const hrs = calculateWorkerHours(log);
+        return `<tr><td>${log.workerName}${log.workerRole ? ' (' + log.workerRole + ')' : ''}</td><td class="hours">${hrs.toFixed(1)}</td></tr>`;
       }).join('');
 
-      const tHrs = taskTotalHours(task);
       return `
-        <h2>${task.description}</h2>
+        <div class="task-header">
+          <div style="display:flex;gap:24px;flex-wrap:wrap;">
+            <div><span class="label">Work Area</span><br><span class="value">${task.workArea || '—'}</span></div>
+            <div style="flex:1"><span class="label">Description</span><br><span class="value">${task.description}</span></div>
+            ${sm ? `<div><span class="label">Site Manager</span><br><span class="value">${sm.name}${sm.phone ? ' · ' + sm.phone : ''}</span></div>` : ''}
+          </div>
+        </div>
         <table>
-          <thead>
-            <tr><th>Worker</th><th>Start</th><th>Finish</th><th>Break</th><th class="hours">Hours</th></tr>
-          </thead>
+          <thead><tr><th>Worker</th><th class="hours">Hours</th></tr></thead>
           <tbody>
             ${workerRows}
-            <tr class="total-row">
-              <td colspan="4">Task Total</td>
-              <td class="hours">${tHrs.toFixed(1)}</td>
-            </tr>
+            <tr class="total-row"><td>Task Total</td><td class="hours">${tHrs.toFixed(1)}</td></tr>
           </tbody>
         </table>
       `;
@@ -71,28 +74,40 @@ export function generateDayworkPdf(project: Project) {
       <div class="${idx < sortedDays.length - 1 ? 'page' : ''}">
         ${idx === 0 ? `
           <div class="header-bar">
-            <h1>${project.name}</h1>
-            <div class="meta">${project.client}${project.location ? ' · ' + project.location : ''}</div>
+            ${company.name ? `<h1>${company.name}</h1>` : '<h1>Daywork Report</h1>'}
+            <div class="company-info">
+              ${[company.address, company.email, company.phone].filter(Boolean).join(' · ')}
+            </div>
+          </div>
+          <div class="meta" style="margin-bottom:16px;">
+            <strong>Project:</strong> ${project.name}<br>
+            <strong>Client:</strong> ${project.client || '—'}<br>
+            <strong>Site Address:</strong> ${project.siteAddress || '—'}
           </div>
         ` : ''}
-        <h2 style="border-bottom-color: #333; font-size: 15px;">
-          ${format(new Date(day.date + 'T00:00:00'), 'EEEE, d MMMM yyyy')}
-        </h2>
-        <p style="margin-bottom: 12px; color: #666;">Day Total: <strong style="color: #1a1a2e;">${totalHrs.toFixed(1)} hours</strong></p>
-        ${taskRows}
+
+        <h2>${format(new Date(dw.date + 'T00:00:00'), 'EEEE, d MMMM yyyy')}</h2>
+        <div class="meta" style="margin-bottom:8px;">
+          ${dw.siteContactName ? `<strong>Site Contact:</strong> ${dw.siteContactName}${dw.siteContactPhone ? ' · ' + dw.siteContactPhone : ''}<br>` : ''}
+          ${dw.purchaseOrder ? `<strong>PO / Contract:</strong> ${dw.purchaseOrder}<br>` : ''}
+        </div>
+
+        ${taskSections}
+
+        <div class="day-total">Day Total: ${totalHrs.toFixed(1)} hours</div>
 
         <div class="sig-section">
           <div class="sig-block">
-            <div class="sig-line"></div>
-            <div class="sig-label">Site Manager Signature</div>
-            <div class="sig-label" style="margin-top: 12px;">Name: _______________________</div>
-            <div class="sig-label" style="margin-top: 8px;">Date: _______________________</div>
+            <div class="sig-line">${dw.signatureData && dw.signatureName ? '<span style="font-style:italic;color:#666;padding-top:24px;display:block;">Signed</span>' : ''}</div>
+            <div class="sig-label">Site Manager / Client Signature</div>
+            <div class="sig-label" style="margin-top:10px;">Name: ${dw.signatureName || '_______________________'}</div>
+            <div class="sig-label" style="margin-top:6px;">Date: ${dw.signatureDate || '_______________________'}</div>
           </div>
           <div class="sig-block">
             <div class="sig-line"></div>
             <div class="sig-label">Contractor Signature</div>
-            <div class="sig-label" style="margin-top: 12px;">Name: _______________________</div>
-            <div class="sig-label" style="margin-top: 8px;">Date: _______________________</div>
+            <div class="sig-label" style="margin-top:10px;">Name: _______________________</div>
+            <div class="sig-label" style="margin-top:6px;">Date: _______________________</div>
           </div>
         </div>
       </div>
@@ -104,11 +119,11 @@ export function generateDayworkPdf(project: Project) {
     <html>
     <head>
       <title>Daywork Report - ${project.name}</title>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
       ${styles}
     </head>
     <body>
-      ${dayPages || '<p>No day records to display.</p>'}
+      ${dayPages || '<p>No daywork records to display.</p>'}
     </body>
     </html>
   `);
