@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, UserPlus, Clock, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, UserPlus, Clock, ChevronDown, ChevronUp, MapPin, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DayworkRecord, SiteManager, PredefinedWorker, Task, WorkerLog, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
 import { format } from 'date-fns';
+import { toast } from '@/hooks/use-toast';
+import SignaturePad from '@/components/SignaturePad';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -59,6 +61,7 @@ export default function DayworkDetail({
       siteManagerName: sm?.name || '',
     });
     setTaskWorkArea(''); setTaskDesc(''); setTaskSmId(''); setTaskOpen(false);
+    toast({ title: '✓ Task saved', description: 'Task has been added successfully.' });
   };
 
   const handleAddWorkerLog = () => {
@@ -74,15 +77,21 @@ export default function DayworkDetail({
       breakHours: 0.5,
     });
     setSelectedWorkerId(''); setWorkerDialogTask(null);
+    toast({ title: '✓ Worker added', description: `${w.name} has been added to the task.` });
   };
 
-  const handleSign = () => {
+  const handleSign = (signatureDataUrl: string) => {
+    if (!sigName.trim()) {
+      toast({ title: 'Name required', description: 'Please enter a printed name.', variant: 'destructive' });
+      return;
+    }
     onUpdateSignature({
       signatureName: sigName.trim(),
       signatureDate: format(new Date(), 'yyyy-MM-dd'),
-      signatureData: 'signed',
+      signatureData: signatureDataUrl,
     });
     setSigOpen(false);
+    toast({ title: '✓ Signed off', description: 'Daywork has been signed by site manager.' });
   };
 
   const totalHrs = dayworkTotalHours(daywork);
@@ -144,7 +153,7 @@ export default function DayworkDetail({
                 </div>
                 <div className="flex items-center gap-1 ml-2">
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={(e) => { e.stopPropagation(); onDeleteTask(task.id); }}>
+                    onClick={(e) => { e.stopPropagation(); onDeleteTask(task.id); toast({ title: 'Task deleted' }); }}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                   {isExpanded ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
@@ -213,14 +222,17 @@ export default function DayworkDetail({
         {/* Signature section */}
         {daywork.tasks.length > 0 && (
           <div className="bg-card rounded-lg border p-4 mt-6">
-            <h3 className="font-semibold mb-2">Signature</h3>
+            <h3 className="font-semibold mb-2">Site Manager Signature</h3>
             {daywork.signatureData ? (
-              <div className="text-sm">
-                <p className="text-muted-foreground">Signed by: <span className="text-foreground font-medium">{daywork.signatureName}</span></p>
-                <p className="text-muted-foreground">Date: {daywork.signatureDate}</p>
+              <div className="space-y-2">
+                <img src={daywork.signatureData} alt="Signature" className="h-16 border rounded bg-white" />
+                <p className="text-sm text-muted-foreground">Signed by: <span className="text-foreground font-medium">{daywork.signatureName}</span></p>
+                <p className="text-sm text-muted-foreground">Date: {daywork.signatureDate}</p>
               </div>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => setSigOpen(true)}>Sign Off</Button>
+              <Button variant="outline" size="lg" className="w-full text-base" onClick={() => setSigOpen(true)}>
+                Sign Off Daywork
+              </Button>
             )}
           </div>
         )}
@@ -228,7 +240,7 @@ export default function DayworkDetail({
 
       {/* Add Task FAB */}
       <div className="fixed bottom-6 right-4 left-4 flex justify-end">
-        <Button size="lg" className="rounded-full shadow-lg active-scale gap-2 px-6" onClick={() => setTaskOpen(true)}>
+        <Button size="lg" className="rounded-full shadow-lg active-scale gap-2 px-6 h-14 text-base" onClick={() => setTaskOpen(true)}>
           <Plus className="w-5 h-5" /> Add Task
         </Button>
       </div>
@@ -240,16 +252,16 @@ export default function DayworkDetail({
           <div className="space-y-3 mt-2">
             <div>
               <Label>Work Area / Location</Label>
-              <Input value={taskWorkArea} onChange={e => setTaskWorkArea(e.target.value)} placeholder="e.g. Level 1, Zone A" className="mt-1" />
+              <Input value={taskWorkArea} onChange={e => setTaskWorkArea(e.target.value)} placeholder="e.g. Level 1, Zone A" className="mt-1 h-11 text-base" />
             </div>
             <div>
               <Label>Description of Works *</Label>
-              <Input value={taskDesc} onChange={e => setTaskDesc(e.target.value)} placeholder="e.g. Formwork installation" className="mt-1" />
+              <Input value={taskDesc} onChange={e => setTaskDesc(e.target.value)} placeholder="e.g. Formwork installation" className="mt-1 h-11 text-base" />
             </div>
             <div>
               <Label>Site Manager</Label>
               <Select value={taskSmId} onValueChange={setTaskSmId}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Select site manager" /></SelectTrigger>
+                <SelectTrigger className="mt-1 h-11 text-base"><SelectValue placeholder="Select site manager" /></SelectTrigger>
                 <SelectContent>
                   {siteManagers.map(sm => (
                     <SelectItem key={sm.id} value={sm.id}>{sm.name}</SelectItem>
@@ -257,7 +269,9 @@ export default function DayworkDetail({
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleAddTask} disabled={!taskDesc.trim()} className="w-full">Add Task</Button>
+            <Button onClick={handleAddTask} disabled={!taskDesc.trim()} className="w-full h-12 text-base gap-2">
+              <Check className="w-5 h-5" /> Save Task
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -270,7 +284,7 @@ export default function DayworkDetail({
             <div>
               <Label>Select Worker</Label>
               <Select value={selectedWorkerId} onValueChange={setSelectedWorkerId}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Choose worker" /></SelectTrigger>
+                <SelectTrigger className="mt-1 h-11 text-base"><SelectValue placeholder="Choose worker" /></SelectTrigger>
                 <SelectContent>
                   {workers.map(w => (
                     <SelectItem key={w.id} value={w.id}>{w.name}{w.role ? ` (${w.role})` : ''}</SelectItem>
@@ -278,7 +292,9 @@ export default function DayworkDetail({
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleAddWorkerLog} disabled={!selectedWorkerId} className="w-full">Add Worker</Button>
+            <Button onClick={handleAddWorkerLog} disabled={!selectedWorkerId} className="w-full h-12 text-base gap-2">
+              <Check className="w-5 h-5" /> Done
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -286,14 +302,17 @@ export default function DayworkDetail({
       {/* Signature Dialog */}
       <Dialog open={sigOpen} onOpenChange={setSigOpen}>
         <DialogContent className="mx-4 max-w-md">
-          <DialogHeader><DialogTitle>Sign Off Daywork</DialogTitle></DialogHeader>
-          <div className="space-y-3 mt-2">
+          <DialogHeader><DialogTitle>Site Manager Sign Off</DialogTitle></DialogHeader>
+          <div className="space-y-4 mt-2">
             <div>
-              <Label>Print Name</Label>
-              <Input value={sigName} onChange={e => setSigName(e.target.value)} placeholder="Full name" className="mt-1" />
+              <Label>Print Name *</Label>
+              <Input value={sigName} onChange={e => setSigName(e.target.value)} placeholder="Full name" className="mt-1 h-11 text-base" />
+            </div>
+            <div>
+              <Label className="mb-2 block">Signature</Label>
+              <SignaturePad onSave={(dataUrl) => handleSign(dataUrl)} />
             </div>
             <p className="text-xs text-muted-foreground">By signing, you confirm this daywork record is accurate.</p>
-            <Button onClick={handleSign} disabled={!sigName.trim()} className="w-full">Confirm & Sign</Button>
           </div>
         </DialogContent>
       </Dialog>
