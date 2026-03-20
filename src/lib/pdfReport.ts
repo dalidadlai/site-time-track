@@ -23,8 +23,9 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
       .task-header { background: #f8f4ef; padding: 8px 10px; border: 1px solid #e5ddd3; border-bottom: none; margin-top: 14px; }
       .task-header .label { font-size: 9px; text-transform: uppercase; color: #888; letter-spacing: 0.5px; }
       .task-header .value { font-size: 11px; font-weight: 500; }
-      .sig-section { display: flex; gap: 48px; margin-top: 40px; page-break-inside: avoid; }
-      .sig-block { flex: 1; }
+      .sig-section { margin-top: 40px; page-break-inside: avoid; max-width: 320px; }
+      .sig-block { }
+      .sig-img { max-height: 60px; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; }
       .sig-line { border-bottom: 1px solid #333; height: 48px; margin-bottom: 6px; }
       .sig-label { font-size: 10px; color: #666; }
       .header-bar { background: #c2702a; color: white; padding: 12px 16px; margin: -24px -24px 16px; }
@@ -70,6 +71,10 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
       `;
     }).join('');
 
+    const sigHtml = dw.signatureData && dw.signatureData.startsWith('data:')
+      ? `<img src="${dw.signatureData}" class="sig-img" alt="Signature" />`
+      : (dw.signatureData ? '<span style="font-style:italic;color:#666;padding-top:24px;display:block;">Signed</span>' : '');
+
     return `
       <div class="${idx < sortedDays.length - 1 ? 'page' : ''}">
         ${idx === 0 ? `
@@ -98,16 +103,10 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
 
         <div class="sig-section">
           <div class="sig-block">
-            <div class="sig-line">${dw.signatureData && dw.signatureName ? '<span style="font-style:italic;color:#666;padding-top:24px;display:block;">Signed</span>' : ''}</div>
+            ${sigHtml || '<div class="sig-line"></div>'}
             <div class="sig-label">Site Manager / Client Signature</div>
             <div class="sig-label" style="margin-top:10px;">Name: ${dw.signatureName || '_______________________'}</div>
             <div class="sig-label" style="margin-top:6px;">Date: ${dw.signatureDate || '_______________________'}</div>
-          </div>
-          <div class="sig-block">
-            <div class="sig-line"></div>
-            <div class="sig-label">Contractor Signature</div>
-            <div class="sig-label" style="margin-top:10px;">Name: _______________________</div>
-            <div class="sig-label" style="margin-top:6px;">Date: _______________________</div>
           </div>
         </div>
       </div>
