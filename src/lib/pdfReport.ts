@@ -38,8 +38,12 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
       .header-divider { height: 3px; background: linear-gradient(to right, #a35a1f, #d4853a, #a35a1f); margin: 0 -24px 18px; }
       .day-total { background: #e8ddd0; padding: 8px 10px; font-weight: 700; font-size: 12px; margin-top: 8px; }
       .day-separator { border-top: 3px solid #c2702a; margin-top: 32px; padding-top: 16px; }
+      @page {
+        margin: 20mm 15mm;
+        size: A4;
+      }
       @media print {
-        body { padding: 0; }
+        body { padding: 0; margin: 0; }
         .header-bar { margin: 0 0 0; padding: 24px 28px 18px; }
         .header-divider { margin: 0 0 18px; }
       }
