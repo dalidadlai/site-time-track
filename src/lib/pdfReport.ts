@@ -1,9 +1,14 @@
 import { Project, CompanyProfile, SiteManager, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
 import { format } from 'date-fns';
 
-export function generateDayworkPdf(project: Project, company: CompanyProfile, siteManagers: SiteManager[]) {
+export function generateDayworkPdf(project: Project, company: CompanyProfile, siteManagers: SiteManager[], dayworkIds?: string[]) {
   const printWindow = window.open('', '_blank');
   if (!printWindow) return;
+
+  const allDays = [...project.dayworks].sort((a, b) => a.date.localeCompare(b.date));
+  const selectedDays = dayworkIds ? allDays.filter(dw => dayworkIds.includes(dw.id)) : allDays;
+
+  if (selectedDays.length === 0) return;
 
   const styles = `
     <style>
@@ -24,7 +29,6 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
       .task-header .label { font-size: 9px; text-transform: uppercase; color: #888; letter-spacing: 0.5px; }
       .task-header .value { font-size: 11px; font-weight: 500; }
       .sig-section { margin-top: 40px; page-break-inside: avoid; max-width: 320px; }
-      .sig-block { }
       .sig-img { max-height: 60px; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; }
       .sig-line { border-bottom: 1px solid #333; height: 48px; margin-bottom: 6px; }
       .sig-label { font-size: 10px; color: #666; }
@@ -32,6 +36,7 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
       .header-bar h1 { color: white; }
       .company-info { font-size: 10px; color: rgba(255,255,255,0.85); line-height: 1.5; }
       .day-total { background: #e8ddd0; padding: 8px 10px; font-weight: 700; font-size: 12px; margin-top: 8px; }
+      .day-separator { border-top: 3px solid #c2702a; margin-top: 32px; padding-top: 16px; }
       @media print {
         body { padding: 0; }
         .header-bar { margin: 0 0 16px; padding: 12px 16px; }
@@ -39,9 +44,7 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
     </style>
   `;
 
-  const sortedDays = [...project.dayworks].sort((a, b) => a.date.localeCompare(b.date));
-
-  const dayPages = sortedDays.map((dw, idx) => {
+  const dayPages = selectedDays.map((dw, idx) => {
     const totalHrs = dayworkTotalHours(dw);
 
     const taskSections = dw.tasks.map(task => {
@@ -76,7 +79,7 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
       : (dw.signatureData ? '<span style="font-style:italic;color:#666;padding-top:24px;display:block;">Signed</span>' : '');
 
     return `
-      <div class="${idx < sortedDays.length - 1 ? 'page' : ''}">
+      <div class="${idx < selectedDays.length - 1 ? 'page' : ''}">
         ${idx === 0 ? `
           <div class="header-bar">
             ${company.name ? `<h1>${company.name}</h1>` : '<h1>Daywork Report</h1>'}
