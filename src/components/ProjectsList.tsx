@@ -1,50 +1,49 @@
 import React, { useState } from 'react';
-import { Plus, HardHat, MapPin, User, ChevronRight, Trash2 } from 'lucide-react';
+import { Plus, HardHat, MapPin, User, ChevronRight, Trash2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Project } from '@/lib/types';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 
 interface ProjectsListProps {
   projects: Project[];
-  onAdd: (name: string, client: string, location: string) => void;
+  onAdd: (name: string, client: string, siteAddress: string) => void;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
+  onSettings: () => void;
 }
 
-export default function ProjectsList({ projects, onAdd, onSelect, onDelete }: ProjectsListProps) {
+export default function ProjectsList({ projects, onAdd, onSelect, onDelete, onSettings }: ProjectsListProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [client, setClient] = useState('');
-  const [location, setLocation] = useState('');
+  const [siteAddress, setSiteAddress] = useState('');
 
   const handleAdd = () => {
     if (!name.trim()) return;
-    onAdd(name.trim(), client.trim(), location.trim());
-    setName('');
-    setClient('');
-    setLocation('');
-    setOpen(false);
+    onAdd(name.trim(), client.trim(), siteAddress.trim());
+    setName(''); setClient(''); setSiteAddress(''); setOpen(false);
   };
 
   return (
     <div className="min-h-screen pb-24">
       <header className="px-4 pt-8 pb-6">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-            <HardHat className="w-5 h-5 text-primary-foreground" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+              <HardHat className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">Daywork Tracker</h1>
+              <p className="text-sm text-muted-foreground">Construction time records</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight">Daywork Tracker</h1>
-            <p className="text-sm text-muted-foreground">Construction time records</p>
-          </div>
+          <Button variant="ghost" size="icon" onClick={onSettings} className="text-muted-foreground">
+            <Settings className="w-5 h-5" />
+          </Button>
         </div>
       </header>
 
@@ -75,23 +74,19 @@ export default function ProjectsList({ projects, onAdd, onSelect, onDelete }: Pr
                       <User className="w-3.5 h-3.5" /> {project.client}
                     </span>
                   )}
-                  {project.location && (
+                  {project.siteAddress && (
                     <span className="text-sm text-muted-foreground flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5" /> {project.location}
+                      <MapPin className="w-3.5 h-3.5" /> {project.siteAddress}
                     </span>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1.5">
-                  {project.days.length} day{project.days.length !== 1 ? 's' : ''} recorded
+                  {project.dayworks.length} daywork{project.dayworks.length !== 1 ? 's' : ''} recorded
                 </p>
               </div>
               <div className="flex items-center gap-1 ml-3">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                  onClick={(e) => { e.stopPropagation(); onDelete(project.id); }}
-                >
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  onClick={(e) => { e.stopPropagation(); onDelete(project.id); }}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
@@ -109,22 +104,11 @@ export default function ProjectsList({ projects, onAdd, onSelect, onDelete }: Pr
             </Button>
           </DialogTrigger>
           <DialogContent className="mx-4 max-w-md">
-            <DialogHeader>
-              <DialogTitle>New Project</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>New Project</DialogTitle></DialogHeader>
             <div className="space-y-4 mt-2">
-              <div>
-                <Label>Project Name *</Label>
-                <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Tower Block A" className="mt-1.5" />
-              </div>
-              <div>
-                <Label>Client</Label>
-                <Input value={client} onChange={e => setClient(e.target.value)} placeholder="e.g. ABC Construction" className="mt-1.5" />
-              </div>
-              <div>
-                <Label>Location</Label>
-                <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. 123 Main Street" className="mt-1.5" />
-              </div>
+              <div><Label>Project Name *</Label><Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Tower Block A" className="mt-1.5" /></div>
+              <div><Label>Client / Company</Label><Input value={client} onChange={e => setClient(e.target.value)} placeholder="e.g. ABC Construction" className="mt-1.5" /></div>
+              <div><Label>Site Address</Label><Input value={siteAddress} onChange={e => setSiteAddress(e.target.value)} placeholder="e.g. 123 Main Street" className="mt-1.5" /></div>
               <Button onClick={handleAdd} disabled={!name.trim()} className="w-full">Create Project</Button>
             </div>
           </DialogContent>

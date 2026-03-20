@@ -1,35 +1,59 @@
 import React, { useState } from 'react';
 import { useProjects } from '@/hooks/useProjects';
+import { useSettings } from '@/hooks/useSettings';
 import ProjectsList from '@/components/ProjectsList';
 import ProjectDetail from '@/components/ProjectDetail';
-import DayDetail from '@/components/DayDetail';
+import DayworkDetail from '@/components/DayworkDetail';
+import SettingsPage from '@/components/SettingsPage';
 import { generateDayworkPdf } from '@/lib/pdfReport';
 
-type View = 
+type View =
   | { screen: 'projects' }
+  | { screen: 'settings' }
   | { screen: 'project'; projectId: string }
-  | { screen: 'day'; projectId: string; dayId: string };
+  | { screen: 'daywork'; projectId: string; dayworkId: string };
 
 const Index = () => {
   const [view, setView] = useState<View>({ screen: 'projects' });
   const {
     projects, addProject, deleteProject,
-    addDay, deleteDay,
+    addDaywork, updateDaywork, deleteDaywork,
     addTask, deleteTask,
-    addWorker, updateWorker, deleteWorker,
+    addWorkerLog, updateWorkerLog, deleteWorkerLog,
   } = useProjects();
+
+  const {
+    company, updateCompany,
+    siteManagers, addSiteManager, deleteSiteManager,
+    workers, addWorker, deleteWorker,
+  } = useSettings();
+
+  if (view.screen === 'settings') {
+    return (
+      <div className="max-w-lg mx-auto">
+        <SettingsPage
+          company={company} siteManagers={siteManagers} workers={workers}
+          onUpdateCompany={updateCompany}
+          onAddSiteManager={addSiteManager} onDeleteSiteManager={deleteSiteManager}
+          onAddWorker={addWorker} onDeleteWorker={deleteWorker}
+          onBack={() => setView({ screen: 'projects' })}
+        />
+      </div>
+    );
+  }
 
   if (view.screen === 'projects') {
     return (
       <div className="max-w-lg mx-auto">
         <ProjectsList
           projects={projects}
-          onAdd={(name, client, location) => {
-            const p = addProject(name, client, location);
+          onAdd={(name, client, siteAddress) => {
+            const p = addProject(name, client, siteAddress);
             setView({ screen: 'project', projectId: p.id });
           }}
           onSelect={(id) => setView({ screen: 'project', projectId: id })}
           onDelete={deleteProject}
+          onSettings={() => setView({ screen: 'settings' })}
         />
       </div>
     );
@@ -47,36 +71,39 @@ const Index = () => {
         <ProjectDetail
           project={project}
           onBack={() => setView({ screen: 'projects' })}
-          onSelectDay={(dayId) => setView({ screen: 'day', projectId: project.id, dayId })}
-          onAddDay={(date) => {
-            const d = addDay(project.id, date);
-            setView({ screen: 'day', projectId: project.id, dayId: d.id });
+          onSelectDaywork={(id) => setView({ screen: 'daywork', projectId: project.id, dayworkId: id })}
+          onAddDaywork={(data) => {
+            const d = addDaywork(project.id, data);
+            setView({ screen: 'daywork', projectId: project.id, dayworkId: d.id });
           }}
-          onDeleteDay={(dayId) => deleteDay(project.id, dayId)}
-          onGeneratePdf={() => generateDayworkPdf(project)}
+          onDeleteDaywork={(id) => deleteDaywork(project.id, id)}
+          onGeneratePdf={() => generateDayworkPdf(project, company, siteManagers)}
         />
       </div>
     );
   }
 
-  if (view.screen === 'day') {
-    const day = project.days.find(d => d.id === view.dayId);
-    if (!day) {
+  if (view.screen === 'daywork') {
+    const dw = project.dayworks.find(d => d.id === view.dayworkId);
+    if (!dw) {
       setView({ screen: 'project', projectId: project.id });
       return null;
     }
 
     return (
       <div className="max-w-lg mx-auto">
-        <DayDetail
-          day={day}
+        <DayworkDetail
+          daywork={dw}
           projectName={project.name}
+          siteManagers={siteManagers}
+          workers={workers}
           onBack={() => setView({ screen: 'project', projectId: project.id })}
-          onAddTask={(desc) => addTask(project.id, day.id, desc)}
-          onDeleteTask={(taskId) => deleteTask(project.id, day.id, taskId)}
-          onAddWorker={(taskId, name) => addWorker(project.id, day.id, taskId, name)}
-          onUpdateWorker={(taskId, workerId, updates) => updateWorker(project.id, day.id, taskId, workerId, updates)}
-          onDeleteWorker={(taskId, workerId) => deleteWorker(project.id, day.id, taskId, workerId)}
+          onAddTask={(task) => addTask(project.id, dw.id, task)}
+          onDeleteTask={(taskId) => deleteTask(project.id, dw.id, taskId)}
+          onAddWorkerLog={(taskId, log) => addWorkerLog(project.id, dw.id, taskId, log)}
+          onUpdateWorkerLog={(taskId, logId, updates) => updateWorkerLog(project.id, dw.id, taskId, logId, updates)}
+          onDeleteWorkerLog={(taskId, logId) => deleteWorkerLog(project.id, dw.id, taskId, logId)}
+          onUpdateSignature={(data) => updateDaywork(project.id, dw.id, data)}
         />
       </div>
     );

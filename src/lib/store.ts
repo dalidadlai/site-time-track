@@ -1,16 +1,33 @@
-import { Project } from './types';
+import { Project, CompanyProfile, SiteManager, PredefinedWorker } from './types';
 
-const STORAGE_KEY = 'daywork-projects';
+const KEYS = {
+  projects: 'dw-projects',
+  company: 'dw-company',
+  siteManagers: 'dw-site-managers',
+  workers: 'dw-workers',
+};
 
-export function loadProjects(): Project[] {
+function load<T>(key: string, fallback: T): T {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
   } catch {
-    return [];
+    return fallback;
   }
 }
 
-export function saveProjects(projects: Project[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+function save(key: string, data: unknown) {
+  localStorage.setItem(key, JSON.stringify(data));
 }
+
+export const loadProjects = () => load<Project[]>(KEYS.projects, []);
+export const saveProjects = (p: Project[]) => save(KEYS.projects, p);
+
+export const loadCompany = () => load<CompanyProfile>(KEYS.company, { name: '', address: '', email: '', phone: '' });
+export const saveCompany = (c: CompanyProfile) => save(KEYS.company, c);
+
+export const loadSiteManagers = () => load<SiteManager[]>(KEYS.siteManagers, []);
+export const saveSiteManagers = (s: SiteManager[]) => save(KEYS.siteManagers, s);
+
+export const loadWorkers = () => load<PredefinedWorker[]>(KEYS.workers, []);
+export const saveWorkers = (w: PredefinedWorker[]) => save(KEYS.workers, w);
