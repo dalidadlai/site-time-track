@@ -48,6 +48,14 @@ export function useProjects() {
     return t;
   }, [projects, persist]);
 
+  const updateTask = useCallback((projectId: string, dayworkId: string, taskId: string, updates: Partial<Omit<Task, 'id' | 'workerLogs'>>) => {
+    persist(projects.map(p => p.id === projectId ? {
+      ...p, dayworks: p.dayworks.map(d => d.id === dayworkId ? {
+        ...d, tasks: d.tasks.map(t => t.id === taskId ? { ...t, ...updates } : t)
+      } : d)
+    } : p));
+  }, [projects, persist]);
+
   const deleteTask = useCallback((projectId: string, dayworkId: string, taskId: string) => {
     persist(projects.map(p => p.id === projectId ? {
       ...p, dayworks: p.dayworks.map(d => d.id === dayworkId ? { ...d, tasks: d.tasks.filter(t => t.id !== taskId) } : d)
