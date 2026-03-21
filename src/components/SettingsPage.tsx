@@ -26,6 +26,16 @@ export default function SettingsPage({
   onAddWorker, onDeleteWorker, onBack,
 }: SettingsPageProps) {
   const [companyForm, setCompanyForm] = useState(company);
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCompanyForm({ ...companyForm, logo: reader.result as string });
+    };
+    reader.readAsDataURL(file);
+  };
   const [smOpen, setSmOpen] = useState(false);
   const [smName, setSmName] = useState('');
   const [smPhone, setSmPhone] = useState('');
