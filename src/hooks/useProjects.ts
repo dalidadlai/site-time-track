@@ -90,9 +90,9 @@ export function useProjects() {
   }, [projects, persist]);
 
   return {
-    projects, addProject, deleteProject,
+    projects, addProject, updateProject, deleteProject,
     addDaywork, updateDaywork, deleteDaywork,
-    addTask, deleteTask,
+    addTask, updateTask, deleteTask,
     addWorkerLog, updateWorkerLog, deleteWorkerLog,
   };
 }
