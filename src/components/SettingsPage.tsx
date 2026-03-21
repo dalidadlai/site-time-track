@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, Building2, Users, HardHat } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Building2, Users, HardHat, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +26,16 @@ export default function SettingsPage({
   onAddWorker, onDeleteWorker, onBack,
 }: SettingsPageProps) {
   const [companyForm, setCompanyForm] = useState(company);
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCompanyForm({ ...companyForm, logo: reader.result as string });
+    };
+    reader.readAsDataURL(file);
+  };
   const [smOpen, setSmOpen] = useState(false);
   const [smName, setSmName] = useState('');
   const [smPhone, setSmPhone] = useState('');
@@ -63,6 +73,24 @@ export default function SettingsPage({
           <div className="flex items-center gap-2 mb-1">
             <Building2 className="w-5 h-5 text-primary" />
             <h2 className="font-semibold">Company Profile</h2>
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Company Logo</Label>
+            <div className="mt-1 flex items-center gap-3">
+              {companyForm.logo ? (
+                <div className="relative">
+                  <img src={companyForm.logo} alt="Logo" className="h-12 w-auto rounded border bg-white p-1" />
+                  <button onClick={() => setCompanyForm({ ...companyForm, logo: undefined })} className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : null}
+              <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded-md hover:bg-secondary transition-colors">
+                <Upload className="w-3.5 h-3.5" />
+                {companyForm.logo ? 'Change' : 'Upload Logo'}
+                <input type="file" accept="image/*,.pdf" onChange={handleLogoUpload} className="hidden" />
+              </label>
+            </div>
           </div>
           <div>
             <Label className="text-xs text-muted-foreground">Company Name</Label>

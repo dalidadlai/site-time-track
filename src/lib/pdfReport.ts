@@ -32,9 +32,11 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
       .sig-img { max-height: 60px; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; }
       .sig-line { border-bottom: 1px solid #333; height: 48px; margin-bottom: 6px; }
       .sig-label { font-size: 10px; color: #666; }
-      .header-bar { background: #c2702a; color: white; padding: 24px 28px 18px; margin: -24px -24px 0; }
-      .header-bar .company-name { font-size: 28px; font-weight: 700; color: white; letter-spacing: -0.3px; margin: 0 0 10px; line-height: 1.15; }
-      .header-bar .company-details { font-size: 10px; color: rgba(255,255,255,0.82); line-height: 1.6; letter-spacing: 0.2px; }
+      .header-bar { background: #c2702a; color: white; padding: 24px 28px 18px; margin: -24px -24px 0; display: flex; align-items: center; gap: 18px; }
+      .header-logo { height: 54px; width: auto; flex-shrink: 0; background: white; border-radius: 4px; padding: 4px; }
+      .header-text { flex: 1; }
+      .header-text .company-name { font-size: 28px; font-weight: 700; color: white; letter-spacing: -0.3px; margin: 0 0 6px; line-height: 1.15; }
+      .header-text .company-details { font-size: 10px; color: rgba(255,255,255,0.82); line-height: 1.6; letter-spacing: 0.2px; }
       .header-divider { height: 3px; background: linear-gradient(to right, #a35a1f, #d4853a, #a35a1f); margin: 0 -24px 18px; }
       .day-total { background: #e8ddd0; padding: 8px 10px; font-weight: 700; font-size: 12px; margin-top: 8px; }
       .day-separator { border-top: 3px solid #c2702a; margin-top: 32px; padding-top: 16px; }
@@ -87,12 +89,15 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
     return `
       <div class="${idx < selectedDays.length - 1 ? 'page' : ''}">
         ${idx === 0 ? `
-          <div class="header-bar">
-            ${company.name ? `<div class="company-name">${company.name}</div>` : '<div class="company-name">Daywork Report</div>'}
-            <div class="company-details">
-              ${[company.address, company.email, company.phone].filter(Boolean).join(' &nbsp;·&nbsp; ')}
-            </div>
-          </div>
+           <div class="header-bar">
+             ${company.logo ? `<img src="${company.logo}" class="header-logo" alt="Logo" />` : ''}
+             <div class="header-text">
+               ${company.name ? `<div class="company-name">${company.name}</div>` : '<div class="company-name">Daywork Report</div>'}
+               <div class="company-details">
+                 ${[company.address, company.email, company.phone].filter(Boolean).join(' &nbsp;·&nbsp; ')}
+               </div>
+             </div>
+           </div>
           <div class="header-divider"></div>
           <div class="meta" style="margin-bottom:16px;">
             <strong>Project:</strong> ${project.name}<br>

@@ -23,7 +23,7 @@ function save(key: string, data: unknown) {
 export const loadProjects = () => load<Project[]>(KEYS.projects, []);
 export const saveProjects = (p: Project[]) => save(KEYS.projects, p);
 
-export const loadCompany = () => load<CompanyProfile>(KEYS.company, { name: '', address: '', email: '', phone: '' });
+export const loadCompany = () => load<CompanyProfile>(KEYS.company, { name: '', address: '', email: '', phone: '', logo: '' });
 export const saveCompany = (c: CompanyProfile) => save(KEYS.company, c);
 
 export const loadSiteManagers = () => load<SiteManager[]>(KEYS.siteManagers, []);

@@ -3,6 +3,7 @@ export interface CompanyProfile {
   address: string;
   email: string;
   phone: string;
+  logo?: string;
 }
 
 export interface SiteManager {
