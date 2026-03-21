@@ -16,6 +16,10 @@ export function useProjects() {
     return p;
   }, [projects, persist]);
 
+  const updateProject = useCallback((id: string, updates: Partial<Omit<Project, 'id' | 'dayworks'>>) => {
+    persist(projects.map(p => p.id === id ? { ...p, ...updates } : p));
+  }, [projects, persist]);
+
   const deleteProject = useCallback((id: string) => {
     persist(projects.filter(p => p.id !== id));
   }, [projects, persist]);
@@ -42,6 +46,14 @@ export function useProjects() {
       ...p, dayworks: p.dayworks.map(d => d.id === dayworkId ? { ...d, tasks: [...d.tasks, t] } : d)
     } : p));
     return t;
+  }, [projects, persist]);
+
+  const updateTask = useCallback((projectId: string, dayworkId: string, taskId: string, updates: Partial<Omit<Task, 'id' | 'workerLogs'>>) => {
+    persist(projects.map(p => p.id === projectId ? {
+      ...p, dayworks: p.dayworks.map(d => d.id === dayworkId ? {
+        ...d, tasks: d.tasks.map(t => t.id === taskId ? { ...t, ...updates } : t)
+      } : d)
+    } : p));
   }, [projects, persist]);
 
   const deleteTask = useCallback((projectId: string, dayworkId: string, taskId: string) => {
@@ -78,9 +90,9 @@ export function useProjects() {
   }, [projects, persist]);
 
   return {
-    projects, addProject, deleteProject,
+    projects, addProject, updateProject, deleteProject,
     addDaywork, updateDaywork, deleteDaywork,
-    addTask, deleteTask,
+    addTask, updateTask, deleteTask,
     addWorkerLog, updateWorkerLog, deleteWorkerLog,
   };
 }
