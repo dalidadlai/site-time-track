@@ -24,7 +24,11 @@ function save(key: string, data: unknown) {
 export const loadProjects = () => load<Project[]>(KEYS.projects, []);
 export const saveProjects = (p: Project[]) => save(KEYS.projects, p);
 
-export const loadCompany = () => load<CompanyProfile>(KEYS.company, { name: '', address: '', email: '', phone: '', logo: '' });
+export const loadCompany = () => {
+  const company = load<CompanyProfile>(KEYS.company, { name: '', address: '', email: '', phone: '', logo: DEFAULT_LOGO });
+  if (!company.logo) company.logo = DEFAULT_LOGO;
+  return company;
+};
 export const saveCompany = (c: CompanyProfile) => save(KEYS.company, c);
 
 export const loadSiteManagers = () => load<SiteManager[]>(KEYS.siteManagers, []);
