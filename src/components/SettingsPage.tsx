@@ -75,6 +75,24 @@ export default function SettingsPage({
             <h2 className="font-semibold">Company Profile</h2>
           </div>
           <div>
+            <Label className="text-xs text-muted-foreground">Company Logo</Label>
+            <div className="mt-1 flex items-center gap-3">
+              {companyForm.logo ? (
+                <div className="relative">
+                  <img src={companyForm.logo} alt="Logo" className="h-12 w-auto rounded border bg-white p-1" />
+                  <button onClick={() => setCompanyForm({ ...companyForm, logo: undefined })} className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : null}
+              <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded-md hover:bg-secondary transition-colors">
+                <Upload className="w-3.5 h-3.5" />
+                {companyForm.logo ? 'Change' : 'Upload Logo'}
+                <input type="file" accept="image/*,.pdf" onChange={handleLogoUpload} className="hidden" />
+              </label>
+            </div>
+          </div>
+          <div>
             <Label className="text-xs text-muted-foreground">Company Name</Label>
             <Input value={companyForm.name} onChange={e => setCompanyForm({ ...companyForm, name: e.target.value })} className="mt-1" />
           </div>
