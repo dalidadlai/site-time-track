@@ -16,9 +16,9 @@ type View =
 const Index = () => {
   const [view, setView] = useState<View>({ screen: 'projects' });
   const {
-    projects, addProject, deleteProject,
+    projects, addProject, updateProject, deleteProject,
     addDaywork, updateDaywork, deleteDaywork,
-    addTask, deleteTask,
+    addTask, updateTask, deleteTask,
     addWorkerLog, updateWorkerLog, deleteWorkerLog,
   } = useProjects();
 
@@ -53,6 +53,7 @@ const Index = () => {
           }}
           onSelect={(id) => setView({ screen: 'project', projectId: id })}
           onDelete={deleteProject}
+          onEdit={(id, updates) => updateProject(id, updates)}
           onSettings={() => setView({ screen: 'settings' })}
         />
       </div>
@@ -76,6 +77,7 @@ const Index = () => {
             const d = addDaywork(project.id, data);
             setView({ screen: 'daywork', projectId: project.id, dayworkId: d.id });
           }}
+          onEditDaywork={(id, data) => updateDaywork(project.id, id, data)}
           onDeleteDaywork={(id) => deleteDaywork(project.id, id)}
           onGeneratePdf={(dayworkIds) => generateDayworkPdf(project, company, siteManagers, dayworkIds)}
         />
@@ -99,6 +101,7 @@ const Index = () => {
           workers={workers}
           onBack={() => setView({ screen: 'project', projectId: project.id })}
           onAddTask={(task) => addTask(project.id, dw.id, task)}
+          onEditTask={(taskId, updates) => updateTask(project.id, dw.id, taskId, updates)}
           onDeleteTask={(taskId) => deleteTask(project.id, dw.id, taskId)}
           onAddWorkerLog={(taskId, log) => addWorkerLog(project.id, dw.id, taskId, log)}
           onUpdateWorkerLog={(taskId, logId, updates) => updateWorkerLog(project.id, dw.id, taskId, logId, updates)}

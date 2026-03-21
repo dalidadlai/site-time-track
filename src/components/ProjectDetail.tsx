@@ -1,25 +1,31 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Calendar, Clock, ChevronRight, Trash2, FileText, Check } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar, Clock, ChevronRight, Trash2, FileText, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Project, dayworkTotalHours } from '@/lib/types';
+import { Project, DayworkRecord, dayworkTotalHours } from '@/lib/types';
 import { format } from 'date-fns';
+import { toast } from '@/hooks/use-toast';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ProjectDetailProps {
   project: Project;
   onBack: () => void;
   onSelectDaywork: (id: string) => void;
   onAddDaywork: (data: { date: string; siteContactName: string; siteContactPhone: string; purchaseOrder: string }) => void;
+  onEditDaywork: (id: string, data: Partial<DayworkRecord>) => void;
   onDeleteDaywork: (id: string) => void;
   onGeneratePdf: (dayworkIds: string[]) => void;
 }
 
-export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onDeleteDaywork, onGeneratePdf }: ProjectDetailProps) {
+export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onEditDaywork, onDeleteDaywork, onGeneratePdf }: ProjectDetailProps) {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [contactName, setContactName] = useState('');
@@ -28,10 +34,35 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
 
+  const [editOpen, setEditOpen] = useState(false);
+  const [editId, setEditId] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editContact, setEditContact] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editPo, setEditPo] = useState('');
+
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
   const handleAdd = () => {
     if (!date) return;
     onAddDaywork({ date, siteContactName: contactName.trim(), siteContactPhone: contactPhone.trim(), purchaseOrder: po.trim() });
     setOpen(false); setContactName(''); setContactPhone(''); setPo('');
+  };
+
+  const openEditDaywork = (dw: DayworkRecord) => {
+    setEditId(dw.id);
+    setEditDate(dw.date);
+    setEditContact(dw.siteContactName);
+    setEditPhone(dw.siteContactPhone);
+    setEditPo(dw.purchaseOrder);
+    setEditOpen(true);
+  };
+
+  const handleEditSave = () => {
+    if (!editDate) return;
+    onEditDaywork(editId, { date: editDate, siteContactName: editContact.trim(), siteContactPhone: editPhone.trim(), purchaseOrder: editPo.trim() });
+    setEditOpen(false);
+    toast({ title: '✓ Daywork updated' });
   };
 
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
@@ -103,12 +134,8 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   {selectMode && (
-                    <Checkbox
-                      checked={selectedIds.has(dw.id)}
-                      onCheckedChange={() => toggleSelect(dw.id)}
-                      onClick={e => e.stopPropagation()}
-                      className="h-5 w-5"
-                    />
+                    <Checkbox checked={selectedIds.has(dw.id)} onCheckedChange={() => toggleSelect(dw.id)}
+                      onClick={e => e.stopPropagation()} className="h-5 w-5" />
                   )}
                   <div className="min-w-0">
                     <h3 className="font-semibold">{format(new Date(dw.date + 'T00:00:00'), 'EEE, d MMM yyyy')}</h3>
@@ -125,11 +152,15 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                   {!selectMode && (
                     <>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={(e) => { e.stopPropagation(); openEditDaywork(dw); }}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary"
                         onClick={(e) => { e.stopPropagation(); onGeneratePdf([dw.id]); }}>
                         <FileText className="w-4 h-4" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={(e) => { e.stopPropagation(); onDeleteDaywork(dw.id); }}>
+                        onClick={(e) => { e.stopPropagation(); setDeleteId(dw.id); }}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </>
@@ -161,6 +192,36 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Edit Daywork Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="mx-4 max-w-md">
+          <DialogHeader><DialogTitle>Edit Daywork</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div><Label>Date *</Label><Input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className="mt-1" /></div>
+            <div><Label>Site Contact Name</Label><Input value={editContact} onChange={e => setEditContact(e.target.value)} className="mt-1" /></div>
+            <div><Label>Contact Phone</Label><Input value={editPhone} onChange={e => setEditPhone(e.target.value)} className="mt-1" /></div>
+            <div><Label>PO / Contract Ref</Label><Input value={editPo} onChange={e => setEditPo(e.target.value)} className="mt-1" /></div>
+            <Button onClick={handleEditSave} disabled={!editDate} className="w-full">Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={(v) => !v && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Daywork?</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently delete this daywork record and all its tasks. This cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (deleteId) { onDeleteDaywork(deleteId); setDeleteId(null); toast({ title: 'Daywork deleted' }); } }}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
