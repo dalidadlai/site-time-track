@@ -1,4 +1,5 @@
 import { Project, CompanyProfile, SiteManager, PredefinedWorker } from './types';
+import { DEFAULT_LOGO } from './defaultLogo';
 
 const KEYS = {
   projects: 'dw-projects',
