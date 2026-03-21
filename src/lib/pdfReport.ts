@@ -89,12 +89,15 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
     return `
       <div class="${idx < selectedDays.length - 1 ? 'page' : ''}">
         ${idx === 0 ? `
-          <div class="header-bar">
-            ${company.name ? `<div class="company-name">${company.name}</div>` : '<div class="company-name">Daywork Report</div>'}
-            <div class="company-details">
-              ${[company.address, company.email, company.phone].filter(Boolean).join(' &nbsp;·&nbsp; ')}
-            </div>
-          </div>
+           <div class="header-bar">
+             ${company.logo ? `<img src="${company.logo}" class="header-logo" alt="Logo" />` : ''}
+             <div class="header-text">
+               ${company.name ? `<div class="company-name">${company.name}</div>` : '<div class="company-name">Daywork Report</div>'}
+               <div class="company-details">
+                 ${[company.address, company.email, company.phone].filter(Boolean).join(' &nbsp;·&nbsp; ')}
+               </div>
+             </div>
+           </div>
           <div class="header-divider"></div>
           <div class="meta" style="margin-bottom:16px;">
             <strong>Project:</strong> ${project.name}<br>
