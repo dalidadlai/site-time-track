@@ -16,6 +16,10 @@ export function useProjects() {
     return p;
   }, [projects, persist]);
 
+  const updateProject = useCallback((id: string, updates: Partial<Omit<Project, 'id' | 'dayworks'>>) => {
+    persist(projects.map(p => p.id === id ? { ...p, ...updates } : p));
+  }, [projects, persist]);
+
   const deleteProject = useCallback((id: string) => {
     persist(projects.filter(p => p.id !== id));
   }, [projects, persist]);
