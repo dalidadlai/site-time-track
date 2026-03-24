@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Calendar, Clock, ChevronRight, Trash2, FileText, Pencil, Copy } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar, Clock, ChevronRight, Trash2, FileText, Pencil, Copy, CalendarDays } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
