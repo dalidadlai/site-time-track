@@ -330,7 +330,7 @@ export default function DayworkDetail({
             </div>
             <div>
               <Label>Description of Works *</Label>
-              <Input value={editTaskDesc} onChange={e => setEditTaskDesc(e.target.value)} className="mt-1 h-11 text-base" />
+              <Textarea value={editTaskDesc} onChange={e => setEditTaskDesc(e.target.value)} className="mt-1 text-base min-h-[100px]" />
             </div>
             <div>
               <Label>Site Manager</Label>
