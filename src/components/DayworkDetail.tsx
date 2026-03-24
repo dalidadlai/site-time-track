@@ -383,9 +383,8 @@ export default function DayworkDetail({
         <DialogContent className="mx-4 max-w-md">
           <DialogHeader><DialogTitle>Site Manager Sign Off</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-2">
-            <div>
-              <Label>Print Name *</Label>
-              <Input value={sigName} onChange={e => setSigName(e.target.value)} placeholder="Full name" className="mt-1 h-11 text-base" />
+            <div className="text-sm text-muted-foreground">
+              <p>Signing as: <span className="text-foreground font-medium">{derivedSigName || 'No site manager assigned'}</span></p>
             </div>
             <div>
               <Label className="mb-2 block">Signature</Label>
