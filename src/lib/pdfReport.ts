@@ -128,6 +128,27 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
     `;
   }).join('');
 
+  // Weekly summary if multiple days selected
+  const summaryHtml = selectedDays.length > 1 ? (() => {
+    const grandTotal = selectedDays.reduce((sum, dw) => sum + dayworkTotalHours(dw), 0);
+    const summaryRows = selectedDays.map(dw => {
+      const hrs = dayworkTotalHours(dw);
+      return `<tr><td>${format(new Date(dw.date + 'T00:00:00'), 'EEE, d MMM yyyy')}</td><td class="hours">${dw.tasks.length}</td><td class="hours">${hrs.toFixed(1)}</td></tr>`;
+    }).join('');
+    return `
+      <div style="page-break-before: always;">
+        <h2>Summary</h2>
+        <table>
+          <thead><tr><th>Date</th><th class="hours">Tasks</th><th class="hours">Hours</th></tr></thead>
+          <tbody>
+            ${summaryRows}
+            <tr class="total-row"><td>Grand Total</td><td class="hours">${selectedDays.reduce((s, d) => s + d.tasks.length, 0)}</td><td class="hours">${grandTotal.toFixed(1)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+  })() : '';
+
   printWindow.document.write(`
     <!DOCTYPE html>
     <html>
@@ -138,6 +159,7 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
     </head>
     <body>
       ${dayPages || '<p>No daywork records to display.</p>'}
+      ${summaryHtml}
     </body>
     </html>
   `);

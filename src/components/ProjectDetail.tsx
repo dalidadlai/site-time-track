@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Calendar, Clock, ChevronRight, Trash2, FileText, Pencil, Copy } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar, Clock, ChevronRight, Trash2, FileText, Pencil, Copy, CalendarDays } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -191,6 +192,13 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                       </span>
                     </div>
                     {dw.siteContactName && <p className="text-xs text-muted-foreground mt-1">Contact: {dw.siteContactName}</p>}
+                    <div className="mt-1.5">
+                      {dw.signatureData ? (
+                        <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100 text-[10px] px-2 py-0">Signed</Badge>
+                      ) : (
+                        <Badge className="bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-100 text-[10px] px-2 py-0">Pending</Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -217,6 +225,30 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
           );
         })}
       </div>
+
+      {/* This Week PDF button */}
+      {sortedDays.length > 0 && !selectMode && (
+        <div className="px-4 mt-4">
+          <Button variant="outline" className="w-full gap-2" onClick={() => {
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const monday = new Date(now);
+            monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            const monStr = format(monday, 'yyyy-MM-dd');
+            const sunStr = format(sunday, 'yyyy-MM-dd');
+            const weekIds = sortedDays.filter(dw => dw.date >= monStr && dw.date <= sunStr).map(dw => dw.id);
+            if (weekIds.length === 0) {
+              toast({ title: 'No dayworks found this week' });
+              return;
+            }
+            onGeneratePdf(weekIds);
+          }}>
+            <CalendarDays className="w-4 h-4" /> Generate This Week PDF
+          </Button>
+        </div>
+      )}
 
       {/* Add Daywork FAB */}
       <div className="fixed bottom-6 right-4 left-4 flex justify-end gap-2">
