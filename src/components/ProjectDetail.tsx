@@ -304,11 +304,20 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                   <SelectValue placeholder="Select a daywork" />
                 </SelectTrigger>
                 <SelectContent>
-                  {sortedDays.map(dw => (
-                    <SelectItem key={dw.id} value={dw.id}>
-                      {format(new Date(dw.date + 'T00:00:00'), 'EEE, d MMM yyyy')} — {dw.tasks.length} task{dw.tasks.length !== 1 ? 's' : ''}
-                    </SelectItem>
-                  ))}
+                  {sortedDays.map(dw => {
+                    const firstTask = dw.tasks[0];
+                    const taskSummary = firstTask
+                      ? `${firstTask.workArea ? firstTask.workArea + ' – ' : ''}${firstTask.description.split('\n')[0].slice(0, 40)}${dw.tasks.length > 1 ? ` (+${dw.tasks.length - 1} more)` : ''}`
+                      : 'No tasks';
+                    return (
+                      <SelectItem key={dw.id} value={dw.id}>
+                        <div className="flex flex-col items-start">
+                          <span>{format(new Date(dw.date + 'T00:00:00'), 'EEE, d MMM yyyy')}</span>
+                          <span className="text-xs text-muted-foreground">{taskSummary}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
