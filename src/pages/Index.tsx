@@ -17,7 +17,7 @@ const Index = () => {
   const [view, setView] = useState<View>({ screen: 'projects' });
   const {
     projects, addProject, updateProject, deleteProject,
-    addDaywork, updateDaywork, deleteDaywork,
+    addDaywork, addDayworkWithTasks, updateDaywork, deleteDaywork,
     addTask, updateTask, deleteTask,
     addWorkerLog, updateWorkerLog, deleteWorkerLog,
   } = useProjects();
