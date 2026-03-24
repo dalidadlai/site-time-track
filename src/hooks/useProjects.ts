@@ -30,6 +30,11 @@ export function useProjects() {
     return dw;
   }, [projects, persist]);
 
+  const addDayworkWithTasks = useCallback((projectId: string, dw: DayworkRecord) => {
+    persist(projects.map(p => p.id === projectId ? { ...p, dayworks: [...p.dayworks, dw] } : p));
+    return dw;
+  }, [projects, persist]);
+
   const updateDaywork = useCallback((projectId: string, dayworkId: string, updates: Partial<DayworkRecord>) => {
     persist(projects.map(p => p.id === projectId ? {
       ...p, dayworks: p.dayworks.map(d => d.id === dayworkId ? { ...d, ...updates } : d)
@@ -91,7 +96,7 @@ export function useProjects() {
 
   return {
     projects, addProject, updateProject, deleteProject,
-    addDaywork, updateDaywork, deleteDaywork,
+    addDaywork, addDayworkWithTasks, updateDaywork, deleteDaywork,
     addTask, updateTask, deleteTask,
     addWorkerLog, updateWorkerLog, deleteWorkerLog,
   };

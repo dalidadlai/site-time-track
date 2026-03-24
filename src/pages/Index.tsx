@@ -17,7 +17,7 @@ const Index = () => {
   const [view, setView] = useState<View>({ screen: 'projects' });
   const {
     projects, addProject, updateProject, deleteProject,
-    addDaywork, updateDaywork, deleteDaywork,
+    addDaywork, addDayworkWithTasks, updateDaywork, deleteDaywork,
     addTask, updateTask, deleteTask,
     addWorkerLog, updateWorkerLog, deleteWorkerLog,
   } = useProjects();
@@ -76,6 +76,10 @@ const Index = () => {
           onAddDaywork={(data) => {
             const d = addDaywork(project.id, data);
             setView({ screen: 'daywork', projectId: project.id, dayworkId: d.id });
+          }}
+          onAddDayworkWithTasks={(dw) => {
+            addDayworkWithTasks(project.id, dw);
+            setView({ screen: 'daywork', projectId: project.id, dayworkId: dw.id });
           }}
           onEditDaywork={(id, data) => updateDaywork(project.id, id, data)}
           onDeleteDaywork={(id) => deleteDaywork(project.id, id)}

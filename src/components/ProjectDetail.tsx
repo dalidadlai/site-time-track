@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Calendar, Clock, ChevronRight, Trash2, FileText, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar, Clock, ChevronRight, Trash2, FileText, Pencil, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Project, DayworkRecord, dayworkTotalHours } from '@/lib/types';
+import { Project, DayworkRecord, dayworkTotalHours, generateId } from '@/lib/types';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import {
@@ -14,18 +14,22 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 
 interface ProjectDetailProps {
   project: Project;
   onBack: () => void;
   onSelectDaywork: (id: string) => void;
   onAddDaywork: (data: { date: string; siteContactName: string; siteContactPhone: string; purchaseOrder: string }) => void;
+  onAddDayworkWithTasks: (data: DayworkRecord) => void;
   onEditDaywork: (id: string, data: Partial<DayworkRecord>) => void;
   onDeleteDaywork: (id: string) => void;
   onGeneratePdf: (dayworkIds: string[]) => void;
 }
 
-export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onEditDaywork, onDeleteDaywork, onGeneratePdf }: ProjectDetailProps) {
+export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onAddDayworkWithTasks, onEditDaywork, onDeleteDaywork, onGeneratePdf }: ProjectDetailProps) {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [contactName, setContactName] = useState('');
@@ -43,10 +47,53 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  // Copy from previous state
+  const [copyOpen, setCopyOpen] = useState(false);
+  const [copyDate, setCopyDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [copySourceId, setCopySourceId] = useState('');
+
+  const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
+
   const handleAdd = () => {
     if (!date) return;
     onAddDaywork({ date, siteContactName: contactName.trim(), siteContactPhone: contactPhone.trim(), purchaseOrder: po.trim() });
     setOpen(false); setContactName(''); setContactPhone(''); setPo('');
+  };
+
+  const handleCopy = () => {
+    if (!copyDate || !copySourceId) return;
+    const source = project.dayworks.find(d => d.id === copySourceId);
+    if (!source) return;
+
+    const newDw: DayworkRecord = {
+      id: generateId(),
+      date: copyDate,
+      siteContactName: source.siteContactName,
+      siteContactPhone: source.siteContactPhone,
+      purchaseOrder: source.purchaseOrder,
+      tasks: source.tasks.map(t => ({
+        ...t,
+        id: generateId(),
+        workerLogs: t.workerLogs.map(w => ({
+          ...w,
+          id: generateId(),
+          startTime: '',
+          finishTime: '',
+          breakHours: 0.5,
+        })),
+      })),
+    };
+
+    onAddDayworkWithTasks(newDw);
+    setCopyOpen(false);
+    toast({ title: `✓ Copied ${newDw.tasks.length} tasks from ${format(new Date(source.date + 'T00:00:00'), 'd MMM')}` });
+  };
+
+  const openCopyDialog = () => {
+    setOpen(false);
+    setCopyDate(format(new Date(), 'yyyy-MM-dd'));
+    setCopySourceId(sortedDays.length > 0 ? sortedDays[0].id : '');
+    setCopyOpen(true);
   };
 
   const openEditDaywork = (dw: DayworkRecord) => {
@@ -64,8 +111,6 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
     setEditOpen(false);
     toast({ title: '✓ Daywork updated' });
   };
-
-  const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
@@ -173,11 +218,18 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
         })}
       </div>
 
-      <div className="fixed bottom-6 right-4 left-4 flex justify-end">
+      {/* Add Daywork FAB */}
+      <div className="fixed bottom-6 right-4 left-4 flex justify-end gap-2">
+        {sortedDays.length > 0 && (
+          <Button size="lg" variant="outline" className="rounded-full shadow-lg active-scale gap-2 px-5 bg-card"
+            onClick={openCopyDialog}>
+            <Copy className="w-5 h-5" /> Copy Previous
+          </Button>
+        )}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button size="lg" className="rounded-full shadow-lg active-scale gap-2 px-6">
-              <Plus className="w-5 h-5" /> Add Daywork
+              <Plus className="w-5 h-5" /> New Blank
             </Button>
           </DialogTrigger>
           <DialogContent className="mx-4 max-w-md">
@@ -192,6 +244,40 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Copy from Previous Dialog */}
+      <Dialog open={copyOpen} onOpenChange={setCopyOpen}>
+        <DialogContent className="mx-4 max-w-md">
+          <DialogHeader><DialogTitle>Copy from Previous Daywork</DialogTitle></DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>New Date *</Label>
+              <Input type="date" value={copyDate} onChange={e => setCopyDate(e.target.value)} className="mt-1" />
+            </div>
+            <div>
+              <Label>Copy tasks & workers from</Label>
+              <Select value={copySourceId} onValueChange={setCopySourceId}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select a daywork" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortedDays.map(dw => (
+                    <SelectItem key={dw.id} value={dw.id}>
+                      {format(new Date(dw.date + 'T00:00:00'), 'EEE, d MMM yyyy')} — {dw.tasks.length} task{dw.tasks.length !== 1 ? 's' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              All tasks, work areas, site managers, and workers will be copied. Start/finish times will be cleared so you can fill them in.
+            </p>
+            <Button onClick={handleCopy} disabled={!copyDate || !copySourceId} className="w-full">
+              Copy & Create Daywork
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Daywork Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
