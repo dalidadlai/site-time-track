@@ -192,6 +192,13 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                       </span>
                     </div>
                     {dw.siteContactName && <p className="text-xs text-muted-foreground mt-1">Contact: {dw.siteContactName}</p>}
+                    <div className="mt-1.5">
+                      {dw.signatureData ? (
+                        <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100 text-[10px] px-2 py-0">Signed</Badge>
+                      ) : (
+                        <Badge className="bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-100 text-[10px] px-2 py-0">Pending</Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
