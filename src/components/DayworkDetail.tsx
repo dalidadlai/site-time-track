@@ -124,12 +124,12 @@ export default function DayworkDetail({
   };
 
   const handleSign = (signatureDataUrl: string) => {
-    if (!sigName.trim()) {
-      toast({ title: 'Name required', description: 'Please enter a printed name.', variant: 'destructive' });
+    if (!derivedSigName) {
+      toast({ title: 'No site manager', description: 'Please assign a site manager to a task first.', variant: 'destructive' });
       return;
     }
     onUpdateSignature({
-      signatureName: sigName.trim(),
+      signatureName: derivedSigName,
       signatureDate: format(new Date(), 'yyyy-MM-dd'),
       signatureData: signatureDataUrl,
     });
