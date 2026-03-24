@@ -47,7 +47,12 @@ export default function DayworkDetail({
   const [selectedWorkerId, setSelectedWorkerId] = useState('');
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set(daywork.tasks.map(t => t.id)));
   const [sigOpen, setSigOpen] = useState(false);
-  const [sigName, setSigName] = useState(daywork.signatureName || '');
+
+  // Auto-derive site manager name from tasks
+  const derivedSigName = (() => {
+    const managers = [...new Set(daywork.tasks.map(t => t.siteManagerName).filter(Boolean))];
+    return managers.length > 0 ? managers[0] : '';
+  })();
 
   // Edit task state
   const [editTaskOpen, setEditTaskOpen] = useState(false);
@@ -119,12 +124,12 @@ export default function DayworkDetail({
   };
 
   const handleSign = (signatureDataUrl: string) => {
-    if (!sigName.trim()) {
-      toast({ title: 'Name required', description: 'Please enter a printed name.', variant: 'destructive' });
+    if (!derivedSigName) {
+      toast({ title: 'No site manager', description: 'Please assign a site manager to a task first.', variant: 'destructive' });
       return;
     }
     onUpdateSignature({
-      signatureName: sigName.trim(),
+      signatureName: derivedSigName,
       signatureDate: format(new Date(), 'yyyy-MM-dd'),
       signatureData: signatureDataUrl,
     });
@@ -378,9 +383,8 @@ export default function DayworkDetail({
         <DialogContent className="mx-4 max-w-md">
           <DialogHeader><DialogTitle>Site Manager Sign Off</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-2">
-            <div>
-              <Label>Print Name *</Label>
-              <Input value={sigName} onChange={e => setSigName(e.target.value)} placeholder="Full name" className="mt-1 h-11 text-base" />
+            <div className="text-sm text-muted-foreground">
+              <p>Signing as: <span className="text-foreground font-medium">{derivedSigName || 'No site manager assigned'}</span></p>
             </div>
             <div>
               <Label className="mb-2 block">Signature</Label>
