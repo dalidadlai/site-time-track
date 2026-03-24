@@ -68,7 +68,7 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
         <div class="task-header">
           <div style="display:flex;gap:24px;flex-wrap:wrap;">
             <div><span class="label">Work Area</span><br><span class="value">${task.workArea || '—'}</span></div>
-            <div style="flex:1"><span class="label">Description</span><br><span class="value">${task.description}</span></div>
+            <div style="flex:1"><span class="label">Description</span><br><span class="value" style="white-space:pre-line;">${task.description}</span></div>
             ${sm ? `<div><span class="label">Site Manager</span><br><span class="value">${sm.name}${sm.phone ? ' · ' + sm.phone : ''}</span></div>` : ''}
           </div>
         </div>

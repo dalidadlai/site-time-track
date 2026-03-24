@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Plus, Trash2, UserPlus, Clock, ChevronDown, ChevronUp, MapPin, Check, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { DayworkRecord, SiteManager, PredefinedWorker, Task, WorkerLog, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
 import { format } from 'date-fns';
@@ -181,7 +182,7 @@ export default function DayworkDetail({
                       <MapPin className="w-3 h-3" /> {task.workArea}
                     </span>
                   )}
-                  <h3 className="font-semibold truncate">{task.description}</h3>
+                  <h3 className="font-semibold whitespace-pre-line">{task.description}</h3>
                   <div className="flex gap-3 mt-1">
                     <span className="text-sm text-muted-foreground">{task.workerLogs.length} worker{task.workerLogs.length !== 1 ? 's' : ''}</span>
                     <span className="text-sm text-muted-foreground">{tHrs.toFixed(1)}h</span>
@@ -298,7 +299,7 @@ export default function DayworkDetail({
             </div>
             <div>
               <Label>Description of Works *</Label>
-              <Input value={taskDesc} onChange={e => setTaskDesc(e.target.value)} placeholder="e.g. Formwork installation" className="mt-1 h-11 text-base" />
+              <Textarea value={taskDesc} onChange={e => setTaskDesc(e.target.value)} placeholder={"e.g.\n1. Strip formwork\n2. Clean and oil panels\n3. Refix to next pour"} className="mt-1 text-base min-h-[100px]" />
             </div>
             <div>
               <Label>Site Manager</Label>
@@ -329,7 +330,7 @@ export default function DayworkDetail({
             </div>
             <div>
               <Label>Description of Works *</Label>
-              <Input value={editTaskDesc} onChange={e => setEditTaskDesc(e.target.value)} className="mt-1 h-11 text-base" />
+              <Textarea value={editTaskDesc} onChange={e => setEditTaskDesc(e.target.value)} className="mt-1 text-base min-h-[100px]" />
             </div>
             <div>
               <Label>Site Manager</Label>
