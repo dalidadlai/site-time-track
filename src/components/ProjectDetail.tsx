@@ -185,6 +185,17 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                   )}
                   <div className="min-w-0">
                     <h3 className="font-semibold">{format(new Date(dw.date + 'T00:00:00'), 'EEE, d MMM yyyy')}</h3>
+                    {(() => {
+                      const managers = [...new Set(dw.tasks.map(t => t.siteManagerName).filter(Boolean))];
+                      if (managers.length > 0) {
+                        return (
+                          <p className="text-sm text-muted-foreground mt-0.5">
+                            {managers[0]}{managers.length > 1 ? ` +${managers.length - 1}` : ''}
+                          </p>
+                        );
+                      }
+                      return null;
+                    })()}
                     <div className="flex gap-4 mt-1.5">
                       <span className="text-sm text-muted-foreground">{dw.tasks.length} task{dw.tasks.length !== 1 ? 's' : ''}</span>
                       <span className="text-sm text-muted-foreground flex items-center gap-1">
