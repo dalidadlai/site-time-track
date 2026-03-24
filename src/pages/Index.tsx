@@ -77,6 +77,10 @@ const Index = () => {
             const d = addDaywork(project.id, data);
             setView({ screen: 'daywork', projectId: project.id, dayworkId: d.id });
           }}
+          onAddDayworkWithTasks={(dw) => {
+            addDayworkWithTasks(project.id, dw);
+            setView({ screen: 'daywork', projectId: project.id, dayworkId: dw.id });
+          }}
           onEditDaywork={(id, data) => updateDaywork(project.id, id, data)}
           onDeleteDaywork={(id) => deleteDaywork(project.id, id)}
           onGeneratePdf={(dayworkIds) => generateDayworkPdf(project, company, siteManagers, dayworkIds)}

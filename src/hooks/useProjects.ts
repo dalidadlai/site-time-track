@@ -96,7 +96,7 @@ export function useProjects() {
 
   return {
     projects, addProject, updateProject, deleteProject,
-    addDaywork, updateDaywork, deleteDaywork,
+    addDaywork, addDayworkWithTasks, updateDaywork, deleteDaywork,
     addTask, updateTask, deleteTask,
     addWorkerLog, updateWorkerLog, deleteWorkerLog,
   };
