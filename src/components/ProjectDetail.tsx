@@ -226,6 +226,30 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
         })}
       </div>
 
+      {/* This Week PDF button */}
+      {sortedDays.length > 0 && !selectMode && (
+        <div className="px-4 mt-4">
+          <Button variant="outline" className="w-full gap-2" onClick={() => {
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const monday = new Date(now);
+            monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            const monStr = format(monday, 'yyyy-MM-dd');
+            const sunStr = format(sunday, 'yyyy-MM-dd');
+            const weekIds = sortedDays.filter(dw => dw.date >= monStr && dw.date <= sunStr).map(dw => dw.id);
+            if (weekIds.length === 0) {
+              toast({ title: 'No dayworks found this week' });
+              return;
+            }
+            onGeneratePdf(weekIds);
+          }}>
+            <CalendarDays className="w-4 h-4" /> Generate This Week PDF
+          </Button>
+        </div>
+      )}
+
       {/* Add Daywork FAB */}
       <div className="fixed bottom-6 right-4 left-4 flex justify-end gap-2">
         {sortedDays.length > 0 && (
