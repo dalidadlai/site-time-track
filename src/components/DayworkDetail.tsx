@@ -182,7 +182,7 @@ export default function DayworkDetail({
                       <MapPin className="w-3 h-3" /> {task.workArea}
                     </span>
                   )}
-                  <h3 className="font-semibold truncate">{task.description}</h3>
+                  <h3 className="font-semibold whitespace-pre-line">{task.description}</h3>
                   <div className="flex gap-3 mt-1">
                     <span className="text-sm text-muted-foreground">{task.workerLogs.length} worker{task.workerLogs.length !== 1 ? 's' : ''}</span>
                     <span className="text-sm text-muted-foreground">{tHrs.toFixed(1)}h</span>
