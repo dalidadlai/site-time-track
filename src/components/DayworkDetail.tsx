@@ -47,7 +47,12 @@ export default function DayworkDetail({
   const [selectedWorkerId, setSelectedWorkerId] = useState('');
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set(daywork.tasks.map(t => t.id)));
   const [sigOpen, setSigOpen] = useState(false);
-  const [sigName, setSigName] = useState(daywork.signatureName || '');
+
+  // Auto-derive site manager name from tasks
+  const derivedSigName = (() => {
+    const managers = [...new Set(daywork.tasks.map(t => t.siteManagerName).filter(Boolean))];
+    return managers.length > 0 ? managers[0] : '';
+  })();
 
   // Edit task state
   const [editTaskOpen, setEditTaskOpen] = useState(false);
