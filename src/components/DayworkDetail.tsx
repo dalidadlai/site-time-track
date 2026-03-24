@@ -299,7 +299,7 @@ export default function DayworkDetail({
             </div>
             <div>
               <Label>Description of Works *</Label>
-              <Input value={taskDesc} onChange={e => setTaskDesc(e.target.value)} placeholder="e.g. Formwork installation" className="mt-1 h-11 text-base" />
+              <Textarea value={taskDesc} onChange={e => setTaskDesc(e.target.value)} placeholder={"e.g.\n1. Strip formwork\n2. Clean and oil panels\n3. Refix to next pour"} className="mt-1 text-base min-h-[100px]" />
             </div>
             <div>
               <Label>Site Manager</Label>
