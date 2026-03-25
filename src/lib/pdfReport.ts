@@ -135,14 +135,39 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
       const hrs = dayworkTotalHours(dw);
       return `<tr><td>${format(new Date(dw.date + 'T00:00:00'), 'EEE, d MMM yyyy')}</td><td class="hours">${dw.tasks.length}</td><td class="hours">${hrs.toFixed(1)}</td></tr>`;
     }).join('');
+
+    // Aggregate hours per worker
+    const workerMap = new Map<string, number>();
+    selectedDays.forEach(dw => {
+      dw.tasks.forEach(task => {
+        task.workerLogs.forEach(log => {
+          const hrs = calculateWorkerHours(log);
+          const name = log.workerName || 'Unknown';
+          workerMap.set(name, (workerMap.get(name) || 0) + hrs);
+        });
+      });
+    });
+    const workerRows = [...workerMap.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, hrs]) => `<tr><td>${name}</td><td class="hours">${hrs.toFixed(1)}</td></tr>`)
+      .join('');
+
     return `
       <div style="page-break-before: always;">
-        <h2>Summary</h2>
+        <h2>Daily Summary</h2>
         <table>
           <thead><tr><th>Date</th><th class="hours">Tasks</th><th class="hours">Hours</th></tr></thead>
           <tbody>
             ${summaryRows}
             <tr class="total-row"><td>Grand Total</td><td class="hours">${selectedDays.reduce((s, d) => s + d.tasks.length, 0)}</td><td class="hours">${grandTotal.toFixed(1)}</td></tr>
+          </tbody>
+        </table>
+        <h2>Hours by Worker</h2>
+        <table>
+          <thead><tr><th>Worker</th><th class="hours">Total Hours</th></tr></thead>
+          <tbody>
+            ${workerRows}
+            <tr class="total-row"><td>Grand Total</td><td class="hours">${grandTotal.toFixed(1)}</td></tr>
           </tbody>
         </table>
       </div>
