@@ -154,14 +154,6 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
 
     return `
       <div style="page-break-before: always;">
-        <h2>Daily Summary</h2>
-        <table>
-          <thead><tr><th>Date</th><th class="hours">Tasks</th><th class="hours">Hours</th></tr></thead>
-          <tbody>
-            ${summaryRows}
-            <tr class="total-row"><td>Grand Total</td><td class="hours">${selectedDays.reduce((s, d) => s + d.tasks.length, 0)}</td><td class="hours">${grandTotal.toFixed(1)}</td></tr>
-          </tbody>
-        </table>
         <h2>Hours by Worker</h2>
         <table>
           <thead><tr><th>Worker</th><th class="hours">Total Hours</th></tr></thead>
