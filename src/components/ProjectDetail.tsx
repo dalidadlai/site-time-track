@@ -33,7 +33,7 @@ interface ProjectDetailProps {
 
 export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onAddDayworkWithTasks, onEditDaywork, onDeleteDaywork, onGeneratePdf }: ProjectDetailProps) {
   const [open, setOpen] = useState(false);
-  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [selectedDates, setSelectedDates] = useState<Date[]>([new Date()]);
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [po, setPo] = useState('');
