@@ -285,6 +285,12 @@ export default function ProjectDetail({ project, siteManagers, workers, onBack, 
 
       {/* Add Daywork FAB */}
       <div className="fixed bottom-6 right-4 left-4 flex justify-end gap-2">
+        {sortedDays.length >= 2 && (
+          <Button size="lg" variant="outline" className="rounded-full shadow-lg active-scale gap-2 px-5 bg-card"
+            onClick={() => { setMultiTaskOpen(true); setMtSelectedDayworks(new Set()); setMtWorkArea(''); setMtDesc(''); setMtSmId(''); setMtWorkers([]); setMtAddWorkerId(''); }}>
+            <Layers className="w-5 h-5" /> Multi-Day Task
+          </Button>
+        )}
         {sortedDays.length > 0 && (
           <Button size="lg" variant="outline" className="rounded-full shadow-lg active-scale gap-2 px-5 bg-card"
             onClick={openCopyDialog}>
