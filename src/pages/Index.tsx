@@ -106,6 +106,7 @@ const Index = () => {
           projectName={project.name}
           siteManagers={siteManagers}
           workers={workers}
+          taskTemplates={taskTemplates}
           onBack={() => setView({ screen: 'project', projectId: project.id })}
           onAddTask={(task) => addTask(project.id, dw.id, task)}
           onEditTask={(taskId, updates) => updateTask(project.id, dw.id, taskId, updates)}
@@ -114,6 +115,8 @@ const Index = () => {
           onUpdateWorkerLog={(taskId, logId, updates) => updateWorkerLog(project.id, dw.id, taskId, logId, updates)}
           onDeleteWorkerLog={(taskId, logId) => deleteWorkerLog(project.id, dw.id, taskId, logId)}
           onUpdateSignature={(data) => updateDaywork(project.id, dw.id, data)}
+          onTouchTaskTemplate={touchTaskTemplate}
+          onAddTaskTemplate={addTaskTemplate}
         />
       </div>
     );
