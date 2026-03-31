@@ -28,6 +28,7 @@ interface ProjectDetailProps {
   onEditDaywork: (id: string, data: Partial<DayworkRecord>) => void;
   onDeleteDaywork: (id: string) => void;
   onGeneratePdf: (dayworkIds: string[]) => void;
+  onNavigateToDaywork?: (dayworkId: string) => void;
 }
 
 export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onAddDayworkWithTasks, onEditDaywork, onDeleteDaywork, onGeneratePdf }: ProjectDetailProps) {
