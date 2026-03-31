@@ -24,6 +24,7 @@ interface DayworkDetailProps {
   projectName: string;
   siteManagers: SiteManager[];
   workers: PredefinedWorker[];
+  taskTemplates: TaskTemplate[];
   onBack: () => void;
   onAddTask: (task: Omit<Task, 'id' | 'workerLogs'>) => void;
   onEditTask: (taskId: string, updates: Partial<Omit<Task, 'id' | 'workerLogs'>>) => void;
@@ -32,6 +33,8 @@ interface DayworkDetailProps {
   onUpdateWorkerLog: (taskId: string, logId: string, updates: Partial<WorkerLog>) => void;
   onDeleteWorkerLog: (taskId: string, logId: string) => void;
   onUpdateSignature: (data: { signatureData?: string; signatureName?: string; signatureDate?: string }) => void;
+  onTouchTaskTemplate: (id: string) => void;
+  onAddTaskTemplate: (t: Omit<TaskTemplate, 'id' | 'usedAt'>) => void;
 }
 
 export default function DayworkDetail({
