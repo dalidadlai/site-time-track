@@ -58,9 +58,16 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
 
   const handleAdd = () => {
-    if (!date) return;
-    onAddDaywork({ date, siteContactName: contactName.trim(), siteContactPhone: contactPhone.trim(), purchaseOrder: po.trim() });
+    if (selectedDates.length === 0) return;
+    selectedDates.forEach(d => {
+      const dateStr = format(d, 'yyyy-MM-dd');
+      onAddDaywork({ date: dateStr, siteContactName: contactName.trim(), siteContactPhone: contactPhone.trim(), purchaseOrder: po.trim() });
+    });
     setOpen(false); setContactName(''); setContactPhone(''); setPo('');
+    setSelectedDates([new Date()]);
+    if (selectedDates.length > 1) {
+      toast({ title: `✓ Created ${selectedDates.length} daywork records` });
+    }
   };
 
   const handleCopy = () => {
