@@ -404,6 +404,141 @@ export default function ProjectDetail({ project, siteManagers, workers, onBack, 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Multi-Day Task Dialog */}
+      <Dialog open={multiTaskOpen} onOpenChange={setMultiTaskOpen}>
+        <DialogContent className="mx-4 max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Add Task to Multiple Days</DialogTitle></DialogHeader>
+          <div className="space-y-4 mt-2">
+            {/* Select dayworks */}
+            <div>
+              <Label>Select Days *</Label>
+              <div className="space-y-2 mt-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                {sortedDays.map(dw => (
+                  <label key={dw.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                    <Checkbox
+                      checked={mtSelectedDayworks.has(dw.id)}
+                      onCheckedChange={() => {
+                        setMtSelectedDayworks(prev => {
+                          const next = new Set(prev);
+                          next.has(dw.id) ? next.delete(dw.id) : next.add(dw.id);
+                          return next;
+                        });
+                      }}
+                      className="h-5 w-5"
+                    />
+                    {format(new Date(dw.date + 'T00:00:00'), 'EEE, d MMM yyyy')}
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">{mtSelectedDayworks.size} day{mtSelectedDayworks.size !== 1 ? 's' : ''} selected</p>
+            </div>
+
+            {/* Task details */}
+            <div>
+              <Label>Work Area / Location</Label>
+              <Input value={mtWorkArea} onChange={e => setMtWorkArea(e.target.value)} placeholder="e.g. Level 1, Zone A" className="mt-1 h-11 text-base" />
+            </div>
+            <div>
+              <Label>Description of Works *</Label>
+              <Textarea value={mtDesc} onChange={e => setMtDesc(e.target.value)} placeholder="Describe the work..." className="mt-1 text-base min-h-[80px]" />
+            </div>
+            <div>
+              <Label>Site Manager</Label>
+              <Select value={mtSmId} onValueChange={setMtSmId}>
+                <SelectTrigger className="mt-1 h-11 text-base"><SelectValue placeholder="Select site manager" /></SelectTrigger>
+                <SelectContent>
+                  {siteManagers.map(sm => (
+                    <SelectItem key={sm.id} value={sm.id}>{sm.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Workers with total hours */}
+            <div>
+              <Label>Workers & Total Hours</Label>
+              <div className="space-y-2 mt-2">
+                {mtWorkers.map((mw, idx) => (
+                  <div key={idx} className="flex items-center gap-2 bg-secondary/30 rounded-md px-3 py-2">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium">{mw.workerName}</span>
+                      {mw.workerRole && <span className="text-xs text-muted-foreground ml-1">({mw.workerRole})</span>}
+                    </div>
+                    <Input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      value={mw.totalHours}
+                      onChange={e => {
+                        const updated = [...mtWorkers];
+                        updated[idx] = { ...updated[idx], totalHours: parseFloat(e.target.value) || 0 };
+                        setMtWorkers(updated);
+                      }}
+                      className="w-20 h-9 text-sm text-center"
+                    />
+                    <span className="text-xs text-muted-foreground">hrs</span>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      onClick={() => setMtWorkers(mtWorkers.filter((_, i) => i !== idx))}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Select value={mtAddWorkerId} onValueChange={v => {
+                  const w = workers.find(pw => pw.id === v);
+                  if (w && !mtWorkers.some(mw => mw.workerId === w.id)) {
+                    setMtWorkers([...mtWorkers, { workerId: w.id, workerName: w.name, workerRole: w.role, totalHours: 8 }]);
+                  }
+                  setMtAddWorkerId('');
+                }}>
+                  <SelectTrigger className="h-11 text-base flex-1"><SelectValue placeholder="Add worker..." /></SelectTrigger>
+                  <SelectContent>
+                    {workers.filter(w => !mtWorkers.some(mw => mw.workerId === w.id)).map(w => (
+                      <SelectItem key={w.id} value={w.id}>{w.name}{w.role ? ` (${w.role})` : ''}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => {
+                if (mtSelectedDayworks.size === 0 || !mtDesc.trim()) return;
+                const sm = siteManagers.find(s => s.id === mtSmId);
+                const taskData: Omit<Task, 'id' | 'workerLogs'> = {
+                  workArea: mtWorkArea.trim(),
+                  description: mtDesc.trim(),
+                  siteManagerId: mtSmId,
+                  siteManagerName: sm?.name || '',
+                };
+                // Convert total hours to start/finish times (07:00 + hours, no break)
+                const workerLogs: Omit<WorkerLog, 'id'>[] = mtWorkers.map(mw => {
+                  const totalMinutes = Math.round(mw.totalHours * 60);
+                  const finishHour = 7 + Math.floor(totalMinutes / 60);
+                  const finishMin = totalMinutes % 60;
+                  return {
+                    workerId: mw.workerId,
+                    workerName: mw.workerName,
+                    workerRole: mw.workerRole,
+                    startTime: '07:00',
+                    finishTime: `${String(finishHour).padStart(2, '0')}:${String(finishMin).padStart(2, '0')}`,
+                    breakHours: 0,
+                  };
+                });
+                onAddMultiDayTask(Array.from(mtSelectedDayworks), taskData, workerLogs);
+                setMultiTaskOpen(false);
+                toast({ title: `✓ Task added to ${mtSelectedDayworks.size} days` });
+              }}
+              disabled={mtSelectedDayworks.size === 0 || !mtDesc.trim()}
+              className="w-full h-12 text-base"
+            >
+              Add Task to {mtSelectedDayworks.size} Day{mtSelectedDayworks.size !== 1 ? 's' : ''}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
