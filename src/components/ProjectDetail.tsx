@@ -284,14 +284,30 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
               <Plus className="w-5 h-5" /> New Blank
             </Button>
           </DialogTrigger>
-          <DialogContent className="mx-4 max-w-md">
+          <DialogContent className="mx-4 max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>New Daywork Record</DialogTitle></DialogHeader>
             <div className="space-y-3 mt-2">
-              <div><Label>Date *</Label><Input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1" /></div>
+              <div>
+                <Label>Select Dates *</Label>
+                <p className="text-xs text-muted-foreground mb-2">Tap multiple dates to create dayworks for each</p>
+                <Calendar
+                  mode="multiple"
+                  selected={selectedDates}
+                  onSelect={(dates) => setSelectedDates(dates || [])}
+                  className="rounded-md border mx-auto pointer-events-auto"
+                />
+                {selectedDates.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {selectedDates.length} date{selectedDates.length !== 1 ? 's' : ''} selected
+                  </p>
+                )}
+              </div>
               <div><Label>Site Contact Name</Label><Input value={contactName} onChange={e => setContactName(e.target.value)} className="mt-1" /></div>
               <div><Label>Contact Phone</Label><Input value={contactPhone} onChange={e => setContactPhone(e.target.value)} className="mt-1" /></div>
               <div><Label>PO / Contract Ref</Label><Input value={po} onChange={e => setPo(e.target.value)} className="mt-1" /></div>
-              <Button onClick={handleAdd} disabled={!date} className="w-full">Create</Button>
+              <Button onClick={handleAdd} disabled={selectedDates.length === 0} className="w-full">
+                {selectedDates.length > 1 ? `Create ${selectedDates.length} Dayworks` : 'Create'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
