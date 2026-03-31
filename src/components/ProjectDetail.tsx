@@ -23,6 +23,8 @@ import {
 
 interface ProjectDetailProps {
   project: Project;
+  siteManagers: SiteManager[];
+  workers: PredefinedWorker[];
   onBack: () => void;
   onSelectDaywork: (id: string) => void;
   onAddDaywork: (data: { date: string; siteContactName: string; siteContactPhone: string; purchaseOrder: string }) => void;
@@ -33,7 +35,24 @@ interface ProjectDetailProps {
   onNavigateToDaywork?: (dayworkId: string) => void;
 }
 
-export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onAddDayworkWithTasks, onEditDaywork, onDeleteDaywork, onGeneratePdf }: ProjectDetailProps) {
+interface MultiDayWorker {
+  id: string;
+  workerId: string;
+  workerName: string;
+  workerRole: string;
+  totalHours: number;
+}
+
+interface MultiDayTask {
+  id: string;
+  workArea: string;
+  description: string;
+  siteManagerId: string;
+  siteManagerName: string;
+  workers: MultiDayWorker[];
+}
+
+export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onAddDayworkWithTasks, onEditDaywork, onDeleteDaywork, onGeneratePdf, siteManagers, workers }: ProjectDetailProps) {
   const [open, setOpen] = useState(false);
   const [selectedDates, setSelectedDates] = useState<Date[]>([new Date()]);
   const [contactName, setContactName] = useState('');
