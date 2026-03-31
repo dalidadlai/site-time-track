@@ -71,8 +71,6 @@ const Index = () => {
       <div className="max-w-lg mx-auto">
         <ProjectDetail
           project={project}
-          siteManagers={siteManagers}
-          workers={workers}
           onBack={() => setView({ screen: 'projects' })}
           onSelectDaywork={(id) => setView({ screen: 'daywork', projectId: project.id, dayworkId: id })}
           onAddDaywork={(data) => {
@@ -86,12 +84,6 @@ const Index = () => {
           onEditDaywork={(id, data) => updateDaywork(project.id, id, data)}
           onDeleteDaywork={(id) => deleteDaywork(project.id, id)}
           onGeneratePdf={(dayworkIds) => generateDayworkPdf(project, company, siteManagers, dayworkIds)}
-          onAddMultiDayTask={(dayworkIds, taskData, workerLogs) => {
-            dayworkIds.forEach(dwId => {
-              const t = addTask(project.id, dwId, taskData);
-              workerLogs.forEach(log => addWorkerLog(project.id, dwId, t.id, log));
-            });
-          }}
         />
       </div>
     );
