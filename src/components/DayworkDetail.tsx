@@ -50,6 +50,8 @@ export default function DayworkDetail({
   const [selectedWorkerId, setSelectedWorkerId] = useState('');
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set(daywork.tasks.map(t => t.id)));
   const [sigOpen, setSigOpen] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
 
   // Auto-derive site manager name from tasks
   const derivedSigName = (() => {
