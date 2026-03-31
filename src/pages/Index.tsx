@@ -26,7 +26,6 @@ const Index = () => {
     company, updateCompany,
     siteManagers, addSiteManager, deleteSiteManager,
     workers, addWorker, deleteWorker,
-    taskTemplates, addTaskTemplate, deleteTaskTemplate, touchTaskTemplate,
   } = useSettings();
 
   if (view.screen === 'settings') {
@@ -34,11 +33,9 @@ const Index = () => {
       <div className="max-w-lg mx-auto">
         <SettingsPage
           company={company} siteManagers={siteManagers} workers={workers}
-          taskTemplates={taskTemplates}
           onUpdateCompany={updateCompany}
           onAddSiteManager={addSiteManager} onDeleteSiteManager={deleteSiteManager}
           onAddWorker={addWorker} onDeleteWorker={deleteWorker}
-          onAddTaskTemplate={addTaskTemplate} onDeleteTaskTemplate={deleteTaskTemplate}
           onBack={() => setView({ screen: 'projects' })}
         />
       </div>
@@ -106,7 +103,6 @@ const Index = () => {
           projectName={project.name}
           siteManagers={siteManagers}
           workers={workers}
-          taskTemplates={taskTemplates}
           onBack={() => setView({ screen: 'project', projectId: project.id })}
           onAddTask={(task) => addTask(project.id, dw.id, task)}
           onEditTask={(taskId, updates) => updateTask(project.id, dw.id, taskId, updates)}
@@ -115,8 +111,6 @@ const Index = () => {
           onUpdateWorkerLog={(taskId, logId, updates) => updateWorkerLog(project.id, dw.id, taskId, logId, updates)}
           onDeleteWorkerLog={(taskId, logId) => deleteWorkerLog(project.id, dw.id, taskId, logId)}
           onUpdateSignature={(data) => updateDaywork(project.id, dw.id, data)}
-          onTouchTaskTemplate={touchTaskTemplate}
-          onAddTaskTemplate={addTaskTemplate}
         />
       </div>
     );

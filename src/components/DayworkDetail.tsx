@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, UserPlus, Clock, ChevronDown, ChevronUp, MapPin, Check, Pencil, BookmarkPlus, Bookmark } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, UserPlus, Clock, ChevronDown, ChevronUp, MapPin, Check, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { DayworkRecord, SiteManager, PredefinedWorker, Task, WorkerLog, TaskTemplate, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
+import { DayworkRecord, SiteManager, PredefinedWorker, Task, WorkerLog, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import SignaturePad from '@/components/SignaturePad';
@@ -24,7 +24,6 @@ interface DayworkDetailProps {
   projectName: string;
   siteManagers: SiteManager[];
   workers: PredefinedWorker[];
-  taskTemplates: TaskTemplate[];
   onBack: () => void;
   onAddTask: (task: Omit<Task, 'id' | 'workerLogs'>) => void;
   onEditTask: (taskId: string, updates: Partial<Omit<Task, 'id' | 'workerLogs'>>) => void;
@@ -33,14 +32,12 @@ interface DayworkDetailProps {
   onUpdateWorkerLog: (taskId: string, logId: string, updates: Partial<WorkerLog>) => void;
   onDeleteWorkerLog: (taskId: string, logId: string) => void;
   onUpdateSignature: (data: { signatureData?: string; signatureName?: string; signatureDate?: string }) => void;
-  onTouchTaskTemplate: (id: string) => void;
-  onAddTaskTemplate: (t: Omit<TaskTemplate, 'id' | 'usedAt'>) => void;
 }
 
 export default function DayworkDetail({
-  daywork, projectName, siteManagers, workers, taskTemplates, onBack,
+  daywork, projectName, siteManagers, workers, onBack,
   onAddTask, onEditTask, onDeleteTask, onAddWorkerLog, onUpdateWorkerLog, onDeleteWorkerLog,
-  onUpdateSignature, onTouchTaskTemplate, onAddTaskTemplate,
+  onUpdateSignature,
 }: DayworkDetailProps) {
   const [taskOpen, setTaskOpen] = useState(false);
   const [taskWorkArea, setTaskWorkArea] = useState('');
@@ -50,8 +47,6 @@ export default function DayworkDetail({
   const [selectedWorkerId, setSelectedWorkerId] = useState('');
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set(daywork.tasks.map(t => t.id)));
   const [sigOpen, setSigOpen] = useState(false);
-  const [selectedTemplateId, setSelectedTemplateId] = useState('');
-  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
 
   // Auto-derive site manager name from tasks
   const derivedSigName = (() => {
@@ -87,16 +82,7 @@ export default function DayworkDetail({
       siteManagerId: taskSmId,
       siteManagerName: sm?.name || '',
     });
-    // If selected from template, touch it for recency
-    if (selectedTemplateId) {
-      onTouchTaskTemplate(selectedTemplateId);
-    }
-    // If user wants to save as new template
-    if (saveAsTemplate && !selectedTemplateId) {
-      onAddTaskTemplate({ workArea: taskWorkArea.trim(), description: taskDesc.trim() });
-    }
     setTaskWorkArea(''); setTaskDesc(''); setTaskSmId(''); setTaskOpen(false);
-    setSelectedTemplateId(''); setSaveAsTemplate(false);
     toast({ title: '✓ Task saved', description: 'Task has been added successfully.' });
   };
 
@@ -308,44 +294,17 @@ export default function DayworkDetail({
       </div>
 
       {/* Add Task Dialog */}
-      <Dialog open={taskOpen} onOpenChange={(v) => { setTaskOpen(v); if (!v) { setSelectedTemplateId(''); setSaveAsTemplate(false); } }}>
-        <DialogContent className="mx-4 max-w-md max-h-[90vh] overflow-y-auto">
+      <Dialog open={taskOpen} onOpenChange={setTaskOpen}>
+        <DialogContent className="mx-4 max-w-md">
           <DialogHeader><DialogTitle>New Task</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
-            {/* Template selector */}
-            {(taskTemplates.length > 0) && (
-              <div>
-                <Label className="flex items-center gap-1.5"><Bookmark className="w-3.5 h-3.5" /> Use Template</Label>
-                <Select value={selectedTemplateId} onValueChange={(val) => {
-                  setSelectedTemplateId(val);
-                  const tpl = taskTemplates.find(t => t.id === val);
-                  if (tpl) {
-                    setTaskWorkArea(tpl.workArea);
-                    setTaskDesc(tpl.description);
-                    setSaveAsTemplate(false);
-                  }
-                }}>
-                  <SelectTrigger className="mt-1 h-11 text-base"><SelectValue placeholder="Select a template or type below" /></SelectTrigger>
-                  <SelectContent>
-                    {[...taskTemplates].sort((a, b) => b.usedAt - a.usedAt).map(t => (
-                      <SelectItem key={t.id} value={t.id}>
-                        <div className="flex flex-col items-start">
-                          <span className="text-sm">{t.description.split('\n')[0].slice(0, 50)}</span>
-                          {t.workArea && <span className="text-xs text-muted-foreground">{t.workArea}</span>}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
             <div>
               <Label>Work Area / Location</Label>
-              <Input value={taskWorkArea} onChange={e => { setTaskWorkArea(e.target.value); setSelectedTemplateId(''); }} placeholder="e.g. Level 1, Zone A" className="mt-1 h-11 text-base" />
+              <Input value={taskWorkArea} onChange={e => setTaskWorkArea(e.target.value)} placeholder="e.g. Level 1, Zone A" className="mt-1 h-11 text-base" />
             </div>
             <div>
               <Label>Description of Works *</Label>
-              <Textarea value={taskDesc} onChange={e => { setTaskDesc(e.target.value); setSelectedTemplateId(''); }} placeholder={"e.g.\n1. Strip formwork\n2. Clean and oil panels\n3. Refix to next pour"} className="mt-1 text-base min-h-[100px]" />
+              <Textarea value={taskDesc} onChange={e => setTaskDesc(e.target.value)} placeholder={"e.g.\n1. Strip formwork\n2. Clean and oil panels\n3. Refix to next pour"} className="mt-1 text-base min-h-[100px]" />
             </div>
             <div>
               <Label>Site Manager</Label>
@@ -358,14 +317,6 @@ export default function DayworkDetail({
                 </SelectContent>
               </Select>
             </div>
-            {/* Save as template option - only show when not using an existing template */}
-            {!selectedTemplateId && taskDesc.trim() && (
-              <label className="flex items-center gap-2 text-sm cursor-pointer py-1">
-                <input type="checkbox" checked={saveAsTemplate} onChange={e => setSaveAsTemplate(e.target.checked)} className="rounded" />
-                <BookmarkPlus className="w-4 h-4 text-muted-foreground" />
-                Save as template for future use
-              </label>
-            )}
             <Button onClick={handleAddTask} disabled={!taskDesc.trim()} className="w-full h-12 text-base gap-2">
               <Check className="w-5 h-5" /> Save Task
             </Button>

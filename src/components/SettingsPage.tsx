@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, Building2, Users, HardHat, Upload, X, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Building2, Users, HardHat, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { CompanyProfile, SiteManager, PredefinedWorker, TaskTemplate } from '@/lib/types';
+import { CompanyProfile, SiteManager, PredefinedWorker } from '@/lib/types';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
@@ -13,21 +12,18 @@ interface SettingsPageProps {
   company: CompanyProfile;
   siteManagers: SiteManager[];
   workers: PredefinedWorker[];
-  taskTemplates: TaskTemplate[];
   onUpdateCompany: (c: CompanyProfile) => void;
   onAddSiteManager: (sm: Omit<SiteManager, 'id'>) => void;
   onDeleteSiteManager: (id: string) => void;
   onAddWorker: (w: Omit<PredefinedWorker, 'id'>) => void;
   onDeleteWorker: (id: string) => void;
-  onAddTaskTemplate: (t: Omit<TaskTemplate, 'id' | 'usedAt'>) => void;
-  onDeleteTaskTemplate: (id: string) => void;
   onBack: () => void;
 }
 
 export default function SettingsPage({
-  company, siteManagers, workers, taskTemplates,
+  company, siteManagers, workers,
   onUpdateCompany, onAddSiteManager, onDeleteSiteManager,
-  onAddWorker, onDeleteWorker, onAddTaskTemplate, onDeleteTaskTemplate, onBack,
+  onAddWorker, onDeleteWorker, onBack,
 }: SettingsPageProps) {
   const [companyForm, setCompanyForm] = useState(company);
 
@@ -47,9 +43,6 @@ export default function SettingsPage({
   const [wOpen, setWOpen] = useState(false);
   const [wName, setWName] = useState('');
   const [wRole, setWRole] = useState('');
-  const [ttOpen, setTtOpen] = useState(false);
-  const [ttWorkArea, setTtWorkArea] = useState('');
-  const [ttDesc, setTtDesc] = useState('');
 
   const handleSaveCompany = () => onUpdateCompany(companyForm);
 
@@ -63,12 +56,6 @@ export default function SettingsPage({
     if (!wName.trim()) return;
     onAddWorker({ name: wName.trim(), role: wRole.trim() });
     setWName(''); setWRole(''); setWOpen(false);
-  };
-
-  const handleAddTemplate = () => {
-    if (!ttDesc.trim()) return;
-    onAddTaskTemplate({ workArea: ttWorkArea.trim(), description: ttDesc.trim() });
-    setTtWorkArea(''); setTtDesc(''); setTtOpen(false);
   };
 
   return (
@@ -194,43 +181,6 @@ export default function SettingsPage({
                   {w.role && <p className="text-xs text-muted-foreground">{w.role}</p>}
                 </div>
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => onDeleteWorker(w.id)}>
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Task Templates */}
-        <section className="bg-card rounded-lg border p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-primary" />
-              <h2 className="font-semibold">Task Templates</h2>
-            </div>
-            <Dialog open={ttOpen} onOpenChange={setTtOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" variant="outline" className="gap-1 h-8"><Plus className="w-4 h-4" /> Add</Button>
-              </DialogTrigger>
-              <DialogContent className="mx-4 max-w-md">
-                <DialogHeader><DialogTitle>Add Task Template</DialogTitle></DialogHeader>
-                <div className="space-y-3 mt-2">
-                  <div><Label>Work Area</Label><Input value={ttWorkArea} onChange={e => setTtWorkArea(e.target.value)} placeholder="e.g. Level 1, Zone A" className="mt-1" /></div>
-                  <div><Label>Description *</Label><Textarea value={ttDesc} onChange={e => setTtDesc(e.target.value)} placeholder="e.g. Line marking" className="mt-1 min-h-[80px]" /></div>
-                  <Button onClick={handleAddTemplate} disabled={!ttDesc.trim()} className="w-full">Add Template</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-          {taskTemplates.length === 0 && <p className="text-sm text-muted-foreground">No task templates added yet. Templates allow quick task selection when creating dayworks.</p>}
-          <div className="space-y-2">
-            {taskTemplates.map(t => (
-              <div key={t.id} className="flex items-center justify-between bg-secondary/50 rounded-md p-3">
-                <div className="min-w-0 flex-1">
-                  {t.workArea && <p className="text-xs text-muted-foreground">{t.workArea}</p>}
-                  <p className="font-medium text-sm truncate">{t.description.split('\n')[0]}</p>
-                </div>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive flex-shrink-0" onClick={() => onDeleteTaskTemplate(t.id)}>
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
               </div>
