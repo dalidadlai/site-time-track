@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, Building2, Users, HardHat, Upload, X } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Building2, Users, HardHat, Upload, X, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { CompanyProfile, SiteManager, PredefinedWorker } from '@/lib/types';
+import { CompanyProfile, SiteManager, PredefinedWorker, TaskTemplate } from '@/lib/types';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
@@ -12,11 +13,14 @@ interface SettingsPageProps {
   company: CompanyProfile;
   siteManagers: SiteManager[];
   workers: PredefinedWorker[];
+  taskTemplates: TaskTemplate[];
   onUpdateCompany: (c: CompanyProfile) => void;
   onAddSiteManager: (sm: Omit<SiteManager, 'id'>) => void;
   onDeleteSiteManager: (id: string) => void;
   onAddWorker: (w: Omit<PredefinedWorker, 'id'>) => void;
   onDeleteWorker: (id: string) => void;
+  onAddTaskTemplate: (t: Omit<TaskTemplate, 'id' | 'usedAt'>) => void;
+  onDeleteTaskTemplate: (id: string) => void;
   onBack: () => void;
 }
 
