@@ -47,6 +47,9 @@ export default function SettingsPage({
   const [wOpen, setWOpen] = useState(false);
   const [wName, setWName] = useState('');
   const [wRole, setWRole] = useState('');
+  const [ttOpen, setTtOpen] = useState(false);
+  const [ttWorkArea, setTtWorkArea] = useState('');
+  const [ttDesc, setTtDesc] = useState('');
 
   const handleSaveCompany = () => onUpdateCompany(companyForm);
 
