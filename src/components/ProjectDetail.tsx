@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Calendar, Clock, ChevronRight, Trash2, FileText, Pencil, Copy, CalendarDays } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, Trash2, FileText, Pencil, Copy, CalendarDays } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,11 +29,12 @@ interface ProjectDetailProps {
   onEditDaywork: (id: string, data: Partial<DayworkRecord>) => void;
   onDeleteDaywork: (id: string) => void;
   onGeneratePdf: (dayworkIds: string[]) => void;
+  onNavigateToDaywork?: (dayworkId: string) => void;
 }
 
 export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onAddDayworkWithTasks, onEditDaywork, onDeleteDaywork, onGeneratePdf }: ProjectDetailProps) {
   const [open, setOpen] = useState(false);
-  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [selectedDates, setSelectedDates] = useState<Date[]>([new Date()]);
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [po, setPo] = useState('');
@@ -56,9 +58,16 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
 
   const handleAdd = () => {
-    if (!date) return;
-    onAddDaywork({ date, siteContactName: contactName.trim(), siteContactPhone: contactPhone.trim(), purchaseOrder: po.trim() });
+    if (selectedDates.length === 0) return;
+    selectedDates.forEach(d => {
+      const dateStr = format(d, 'yyyy-MM-dd');
+      onAddDaywork({ date: dateStr, siteContactName: contactName.trim(), siteContactPhone: contactPhone.trim(), purchaseOrder: po.trim() });
+    });
     setOpen(false); setContactName(''); setContactPhone(''); setPo('');
+    setSelectedDates([new Date()]);
+    if (selectedDates.length > 1) {
+      toast({ title: `✓ Created ${selectedDates.length} daywork records` });
+    }
   };
 
   const handleCopy = () => {
@@ -164,7 +173,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
         {sortedDays.length === 0 && (
           <div className="text-center py-16 animate-fade-in">
             <div className="w-16 h-16 rounded-2xl bg-secondary mx-auto mb-4 flex items-center justify-center">
-              <Calendar className="w-8 h-8 text-muted-foreground" />
+              <CalendarIcon className="w-8 h-8 text-muted-foreground" />
             </div>
             <p className="text-muted-foreground font-medium">No daywork records</p>
             <p className="text-sm text-muted-foreground mt-1">Add a daily record to start tracking</p>
@@ -275,14 +284,30 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
               <Plus className="w-5 h-5" /> New Blank
             </Button>
           </DialogTrigger>
-          <DialogContent className="mx-4 max-w-md">
+          <DialogContent className="mx-4 max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>New Daywork Record</DialogTitle></DialogHeader>
             <div className="space-y-3 mt-2">
-              <div><Label>Date *</Label><Input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1" /></div>
+              <div>
+                <Label>Select Dates *</Label>
+                <p className="text-xs text-muted-foreground mb-2">Tap multiple dates to create dayworks for each</p>
+                <Calendar
+                  mode="multiple"
+                  selected={selectedDates}
+                  onSelect={(dates) => setSelectedDates(dates || [])}
+                  className="rounded-md border mx-auto pointer-events-auto"
+                />
+                {selectedDates.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {selectedDates.length} date{selectedDates.length !== 1 ? 's' : ''} selected
+                  </p>
+                )}
+              </div>
               <div><Label>Site Contact Name</Label><Input value={contactName} onChange={e => setContactName(e.target.value)} className="mt-1" /></div>
               <div><Label>Contact Phone</Label><Input value={contactPhone} onChange={e => setContactPhone(e.target.value)} className="mt-1" /></div>
               <div><Label>PO / Contract Ref</Label><Input value={po} onChange={e => setPo(e.target.value)} className="mt-1" /></div>
-              <Button onClick={handleAdd} disabled={!date} className="w-full">Create</Button>
+              <Button onClick={handleAdd} disabled={selectedDates.length === 0} className="w-full">
+                {selectedDates.length > 1 ? `Create ${selectedDates.length} Dayworks` : 'Create'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
