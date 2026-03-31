@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, Trash2, FileText, Pencil, Copy, CalendarDays } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, Trash2, FileText, Pencil, Copy, CalendarDays, Layers } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Project, DayworkRecord, dayworkTotalHours, generateId } from '@/lib/types';
+import { Project, DayworkRecord, SiteManager, PredefinedWorker, Task, WorkerLog, dayworkTotalHours, generateId } from '@/lib/types';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import {
@@ -22,6 +23,8 @@ import {
 
 interface ProjectDetailProps {
   project: Project;
+  siteManagers: SiteManager[];
+  workers: PredefinedWorker[];
   onBack: () => void;
   onSelectDaywork: (id: string) => void;
   onAddDaywork: (data: { date: string; siteContactName: string; siteContactPhone: string; purchaseOrder: string }) => void;
@@ -30,9 +33,10 @@ interface ProjectDetailProps {
   onDeleteDaywork: (id: string) => void;
   onGeneratePdf: (dayworkIds: string[]) => void;
   onNavigateToDaywork?: (dayworkId: string) => void;
+  onAddMultiDayTask: (dayworkIds: string[], task: Omit<Task, 'id' | 'workerLogs'>, workerLogs: Omit<WorkerLog, 'id'>[]) => void;
 }
 
-export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onAddDayworkWithTasks, onEditDaywork, onDeleteDaywork, onGeneratePdf }: ProjectDetailProps) {
+export default function ProjectDetail({ project, siteManagers, workers, onBack, onSelectDaywork, onAddDaywork, onAddDayworkWithTasks, onEditDaywork, onDeleteDaywork, onGeneratePdf, onAddMultiDayTask }: ProjectDetailProps) {
   const [open, setOpen] = useState(false);
   const [selectedDates, setSelectedDates] = useState<Date[]>([new Date()]);
   const [contactName, setContactName] = useState('');
