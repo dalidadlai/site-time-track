@@ -19,6 +19,13 @@ export interface PredefinedWorker {
   role: string;
 }
 
+export interface TaskTemplate {
+  id: string;
+  workArea: string;
+  description: string;
+  usedAt: number; // timestamp for recent sorting
+}
+
 export interface WorkerLog {
   id: string;
   workerId: string;

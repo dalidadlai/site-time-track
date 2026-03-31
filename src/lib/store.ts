@@ -37,3 +37,6 @@ export const saveSiteManagers = (s: SiteManager[]) => save(KEYS.siteManagers, s)
 
 export const loadWorkers = () => load<PredefinedWorker[]>(KEYS.workers, []);
 export const saveWorkers = (w: PredefinedWorker[]) => save(KEYS.workers, w);
+
+export const loadTaskTemplates = () => load<TaskTemplate[]>(KEYS.taskTemplates, []);
+export const saveTaskTemplates = (t: TaskTemplate[]) => save(KEYS.taskTemplates, t);

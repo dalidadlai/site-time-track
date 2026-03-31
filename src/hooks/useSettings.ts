@@ -37,9 +37,28 @@ export function useSettings() {
     saveWorkers(updated);
   }, [workers]);
 
+  const addTaskTemplate = useCallback((t: Omit<TaskTemplate, 'id' | 'usedAt'>) => {
+    const updated = [...taskTemplates, { ...t, id: generateId(), usedAt: Date.now() }];
+    setTaskTemplates(updated);
+    saveTaskTemplates(updated);
+  }, [taskTemplates]);
+
+  const deleteTaskTemplate = useCallback((id: string) => {
+    const updated = taskTemplates.filter(t => t.id !== id);
+    setTaskTemplates(updated);
+    saveTaskTemplates(updated);
+  }, [taskTemplates]);
+
+  const touchTaskTemplate = useCallback((id: string) => {
+    const updated = taskTemplates.map(t => t.id === id ? { ...t, usedAt: Date.now() } : t);
+    setTaskTemplates(updated);
+    saveTaskTemplates(updated);
+  }, [taskTemplates]);
+
   return {
     company, updateCompany,
     siteManagers, addSiteManager, deleteSiteManager,
     workers, addWorker, deleteWorker,
+    taskTemplates, addTaskTemplate, deleteTaskTemplate, touchTaskTemplate,
   };
 }
