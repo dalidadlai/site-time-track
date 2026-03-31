@@ -25,9 +25,9 @@ interface SettingsPageProps {
 }
 
 export default function SettingsPage({
-  company, siteManagers, workers,
+  company, siteManagers, workers, taskTemplates,
   onUpdateCompany, onAddSiteManager, onDeleteSiteManager,
-  onAddWorker, onDeleteWorker, onBack,
+  onAddWorker, onDeleteWorker, onAddTaskTemplate, onDeleteTaskTemplate, onBack,
 }: SettingsPageProps) {
   const [companyForm, setCompanyForm] = useState(company);
 
