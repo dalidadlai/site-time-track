@@ -308,17 +308,44 @@ export default function DayworkDetail({
       </div>
 
       {/* Add Task Dialog */}
-      <Dialog open={taskOpen} onOpenChange={setTaskOpen}>
-        <DialogContent className="mx-4 max-w-md">
+      <Dialog open={taskOpen} onOpenChange={(v) => { setTaskOpen(v); if (!v) { setSelectedTemplateId(''); setSaveAsTemplate(false); } }}>
+        <DialogContent className="mx-4 max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>New Task</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
+            {/* Template selector */}
+            {(taskTemplates.length > 0) && (
+              <div>
+                <Label className="flex items-center gap-1.5"><Bookmark className="w-3.5 h-3.5" /> Use Template</Label>
+                <Select value={selectedTemplateId} onValueChange={(val) => {
+                  setSelectedTemplateId(val);
+                  const tpl = taskTemplates.find(t => t.id === val);
+                  if (tpl) {
+                    setTaskWorkArea(tpl.workArea);
+                    setTaskDesc(tpl.description);
+                    setSaveAsTemplate(false);
+                  }
+                }}>
+                  <SelectTrigger className="mt-1 h-11 text-base"><SelectValue placeholder="Select a template or type below" /></SelectTrigger>
+                  <SelectContent>
+                    {[...taskTemplates].sort((a, b) => b.usedAt - a.usedAt).map(t => (
+                      <SelectItem key={t.id} value={t.id}>
+                        <div className="flex flex-col items-start">
+                          <span className="text-sm">{t.description.split('\n')[0].slice(0, 50)}</span>
+                          {t.workArea && <span className="text-xs text-muted-foreground">{t.workArea}</span>}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label>Work Area / Location</Label>
-              <Input value={taskWorkArea} onChange={e => setTaskWorkArea(e.target.value)} placeholder="e.g. Level 1, Zone A" className="mt-1 h-11 text-base" />
+              <Input value={taskWorkArea} onChange={e => { setTaskWorkArea(e.target.value); setSelectedTemplateId(''); }} placeholder="e.g. Level 1, Zone A" className="mt-1 h-11 text-base" />
             </div>
             <div>
               <Label>Description of Works *</Label>
-              <Textarea value={taskDesc} onChange={e => setTaskDesc(e.target.value)} placeholder={"e.g.\n1. Strip formwork\n2. Clean and oil panels\n3. Refix to next pour"} className="mt-1 text-base min-h-[100px]" />
+              <Textarea value={taskDesc} onChange={e => { setTaskDesc(e.target.value); setSelectedTemplateId(''); }} placeholder={"e.g.\n1. Strip formwork\n2. Clean and oil panels\n3. Refix to next pour"} className="mt-1 text-base min-h-[100px]" />
             </div>
             <div>
               <Label>Site Manager</Label>
@@ -331,6 +358,14 @@ export default function DayworkDetail({
                 </SelectContent>
               </Select>
             </div>
+            {/* Save as template option - only show when not using an existing template */}
+            {!selectedTemplateId && taskDesc.trim() && (
+              <label className="flex items-center gap-2 text-sm cursor-pointer py-1">
+                <input type="checkbox" checked={saveAsTemplate} onChange={e => setSaveAsTemplate(e.target.checked)} className="rounded" />
+                <BookmarkPlus className="w-4 h-4 text-muted-foreground" />
+                Save as template for future use
+              </label>
+            )}
             <Button onClick={handleAddTask} disabled={!taskDesc.trim()} className="w-full h-12 text-base gap-2">
               <Check className="w-5 h-5" /> Save Task
             </Button>
