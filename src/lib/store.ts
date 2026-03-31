@@ -1,4 +1,4 @@
-import { Project, CompanyProfile, SiteManager, PredefinedWorker } from './types';
+import { Project, CompanyProfile, SiteManager, PredefinedWorker, TaskTemplate } from './types';
 import { DEFAULT_LOGO } from './defaultLogo';
 
 const KEYS = {
@@ -6,6 +6,7 @@ const KEYS = {
   company: 'dw-company',
   siteManagers: 'dw-site-managers',
   workers: 'dw-workers',
+  taskTemplates: 'dw-task-templates',
 };
 
 function load<T>(key: string, fallback: T): T {
