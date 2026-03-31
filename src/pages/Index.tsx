@@ -34,9 +34,11 @@ const Index = () => {
       <div className="max-w-lg mx-auto">
         <SettingsPage
           company={company} siteManagers={siteManagers} workers={workers}
+          taskTemplates={taskTemplates}
           onUpdateCompany={updateCompany}
           onAddSiteManager={addSiteManager} onDeleteSiteManager={deleteSiteManager}
           onAddWorker={addWorker} onDeleteWorker={deleteWorker}
+          onAddTaskTemplate={addTaskTemplate} onDeleteTaskTemplate={deleteTaskTemplate}
           onBack={() => setView({ screen: 'projects' })}
         />
       </div>
