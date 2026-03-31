@@ -71,6 +71,8 @@ const Index = () => {
       <div className="max-w-lg mx-auto">
         <ProjectDetail
           project={project}
+          siteManagers={siteManagers}
+          workers={workers}
           onBack={() => setView({ screen: 'projects' })}
           onSelectDaywork={(id) => setView({ screen: 'daywork', projectId: project.id, dayworkId: id })}
           onAddDaywork={(data) => {
@@ -79,7 +81,6 @@ const Index = () => {
           }}
           onAddDayworkWithTasks={(dw) => {
             addDayworkWithTasks(project.id, dw);
-            setView({ screen: 'daywork', projectId: project.id, dayworkId: dw.id });
           }}
           onEditDaywork={(id, data) => updateDaywork(project.id, id, data)}
           onDeleteDaywork={(id) => deleteDaywork(project.id, id)}

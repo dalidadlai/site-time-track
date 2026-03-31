@@ -86,17 +86,100 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
   const isMultiDay = selectedDates.length > 1;
 
+  const handleAddMultiDayTask = () => {
+    if (!mtDesc.trim()) return;
+    const sm = siteManagers.find(s => s.id === mtSmId);
+    const newTask: MultiDayTask = {
+      id: generateId(),
+      workArea: mtWorkArea.trim(),
+      description: mtDesc.trim(),
+      siteManagerId: mtSmId,
+      siteManagerName: sm?.name || '',
+      workers: [],
+    };
+    setMultiTasks(prev => [...prev, newTask]);
+    setMtWorkArea(''); setMtDesc(''); setMtSmId('');
+  };
+
+  const addWorkerToMultiTask = (taskId: string) => {
+    const w = workers.find(pw => pw.id === mtSelectedWorkerId);
+    if (!w) return;
+    setMultiTasks(prev => prev.map(t => t.id === taskId ? {
+      ...t,
+      workers: [...t.workers, { id: generateId(), workerId: w.id, workerName: w.name, workerRole: w.role, totalHours: 8 }]
+    } : t));
+    setMtSelectedWorkerId(''); setMtWorkerOpen(null);
+  };
+
+  const removeMultiTask = (taskId: string) => {
+    setMultiTasks(prev => prev.filter(t => t.id !== taskId));
+  };
+
+  const updateMultiWorkerHours = (taskId: string, workerId: string, hours: number) => {
+    setMultiTasks(prev => prev.map(t => t.id === taskId ? {
+      ...t,
+      workers: t.workers.map(w => w.id === workerId ? { ...w, totalHours: hours } : w)
+    } : t));
+  };
+
+  const removeMultiWorker = (taskId: string, workerId: string) => {
+    setMultiTasks(prev => prev.map(t => t.id === taskId ? {
+      ...t,
+      workers: t.workers.filter(w => w.id !== workerId)
+    } : t));
+  };
+
   const handleAdd = () => {
     if (selectedDates.length === 0) return;
-    selectedDates.forEach(d => {
-      const dateStr = format(d, 'yyyy-MM-dd');
-      onAddDaywork({ date: dateStr, siteContactName: contactName.trim(), siteContactPhone: contactPhone.trim(), purchaseOrder: po.trim() });
-    });
-    setOpen(false); setContactName(''); setContactPhone(''); setPo('');
-    setSelectedDates([new Date()]);
-    if (selectedDates.length > 1) {
-      toast({ title: `✓ Created ${selectedDates.length} daywork records` });
+
+    if (isMultiDay && multiTasks.length > 0) {
+      // Create dayworks with tasks and Total Hours mapped to worker logs
+      selectedDates.forEach(d => {
+        const dateStr = format(d, 'yyyy-MM-dd');
+        const dw: DayworkRecord = {
+          id: generateId(),
+          date: dateStr,
+          siteContactName: contactName.trim(),
+          siteContactPhone: contactPhone.trim(),
+          purchaseOrder: po.trim(),
+          tasks: multiTasks.map(mt => ({
+            id: generateId(),
+            workArea: mt.workArea,
+            description: mt.description,
+            siteManagerId: mt.siteManagerId,
+            siteManagerName: mt.siteManagerName,
+            workerLogs: mt.workers.map(w => {
+              // Map total hours to start/finish with 0 break
+              const startHour = 7;
+              const endMinutes = startHour * 60 + Math.round(w.totalHours * 60);
+              const fh = Math.floor(endMinutes / 60);
+              const fm = endMinutes % 60;
+              return {
+                id: generateId(),
+                workerId: w.workerId,
+                workerName: w.workerName,
+                workerRole: w.workerRole,
+                startTime: '07:00',
+                finishTime: `${String(fh).padStart(2, '0')}:${String(fm).padStart(2, '0')}`,
+                breakHours: 0,
+              };
+            }),
+          })),
+        };
+        onAddDayworkWithTasks(dw);
+      });
+      toast({ title: `✓ Created ${selectedDates.length} dayworks with ${multiTasks.length} task${multiTasks.length > 1 ? 's' : ''}` });
+    } else {
+      selectedDates.forEach(d => {
+        const dateStr = format(d, 'yyyy-MM-dd');
+        onAddDaywork({ date: dateStr, siteContactName: contactName.trim(), siteContactPhone: contactPhone.trim(), purchaseOrder: po.trim() });
+      });
+      if (selectedDates.length > 1) {
+        toast({ title: `✓ Created ${selectedDates.length} daywork records` });
+      }
     }
+    setOpen(false); setContactName(''); setContactPhone(''); setPo('');
+    setSelectedDates([new Date()]); setMultiTasks([]);
   };
 
   const handleCopy = () => {
