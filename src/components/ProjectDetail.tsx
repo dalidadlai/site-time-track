@@ -54,6 +54,15 @@ export default function ProjectDetail({ project, siteManagers, workers, onBack, 
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  // Multi-day task state
+  const [multiTaskOpen, setMultiTaskOpen] = useState(false);
+  const [mtSelectedDayworks, setMtSelectedDayworks] = useState<Set<string>>(new Set());
+  const [mtWorkArea, setMtWorkArea] = useState('');
+  const [mtDesc, setMtDesc] = useState('');
+  const [mtSmId, setMtSmId] = useState('');
+  const [mtWorkers, setMtWorkers] = useState<{ workerId: string; workerName: string; workerRole: string; totalHours: number }[]>([]);
+  const [mtAddWorkerId, setMtAddWorkerId] = useState('');
+
   // Copy from previous state
   const [copyOpen, setCopyOpen] = useState(false);
   const [copyDate, setCopyDate] = useState(format(new Date(), 'yyyy-MM-dd'));
