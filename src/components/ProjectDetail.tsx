@@ -173,7 +173,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
         {sortedDays.length === 0 && (
           <div className="text-center py-16 animate-fade-in">
             <div className="w-16 h-16 rounded-2xl bg-secondary mx-auto mb-4 flex items-center justify-center">
-              <Calendar className="w-8 h-8 text-muted-foreground" />
+              <CalendarIcon className="w-8 h-8 text-muted-foreground" />
             </div>
             <p className="text-muted-foreground font-medium">No daywork records</p>
             <p className="text-sm text-muted-foreground mt-1">Add a daily record to start tracking</p>
