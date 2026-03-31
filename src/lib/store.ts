@@ -1,4 +1,4 @@
-import { Project, CompanyProfile, SiteManager, PredefinedWorker } from './types';
+import { Project, CompanyProfile, SiteManager, PredefinedWorker, TaskTemplate } from './types';
 import { DEFAULT_LOGO } from './defaultLogo';
 
 const KEYS = {
@@ -6,6 +6,7 @@ const KEYS = {
   company: 'dw-company',
   siteManagers: 'dw-site-managers',
   workers: 'dw-workers',
+  taskTemplates: 'dw-task-templates',
 };
 
 function load<T>(key: string, fallback: T): T {
@@ -36,3 +37,6 @@ export const saveSiteManagers = (s: SiteManager[]) => save(KEYS.siteManagers, s)
 
 export const loadWorkers = () => load<PredefinedWorker[]>(KEYS.workers, []);
 export const saveWorkers = (w: PredefinedWorker[]) => save(KEYS.workers, w);
+
+export const loadTaskTemplates = () => load<TaskTemplate[]>(KEYS.taskTemplates, []);
+export const saveTaskTemplates = (t: TaskTemplate[]) => save(KEYS.taskTemplates, t);
