@@ -26,6 +26,7 @@ const Index = () => {
     company, updateCompany,
     siteManagers, addSiteManager, deleteSiteManager,
     workers, addWorker, deleteWorker,
+    taskTemplates, addTaskTemplate, deleteTaskTemplate, touchTaskTemplate,
   } = useSettings();
 
   if (view.screen === 'settings') {
