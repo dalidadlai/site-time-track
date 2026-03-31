@@ -85,7 +85,16 @@ export default function DayworkDetail({
       siteManagerId: taskSmId,
       siteManagerName: sm?.name || '',
     });
+    // If selected from template, touch it for recency
+    if (selectedTemplateId) {
+      onTouchTaskTemplate(selectedTemplateId);
+    }
+    // If user wants to save as new template
+    if (saveAsTemplate && !selectedTemplateId) {
+      onAddTaskTemplate({ workArea: taskWorkArea.trim(), description: taskDesc.trim() });
+    }
     setTaskWorkArea(''); setTaskDesc(''); setTaskSmId(''); setTaskOpen(false);
+    setSelectedTemplateId(''); setSaveAsTemplate(false);
     toast({ title: '✓ Task saved', description: 'Task has been added successfully.' });
   };
 
