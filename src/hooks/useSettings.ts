@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react';
-import { CompanyProfile, SiteManager, PredefinedWorker, generateId } from '@/lib/types';
-import { loadCompany, saveCompany, loadSiteManagers, saveSiteManagers, loadWorkers, saveWorkers } from '@/lib/store';
+import { CompanyProfile, SiteManager, PredefinedWorker, TaskTemplate, generateId } from '@/lib/types';
+import { loadCompany, saveCompany, loadSiteManagers, saveSiteManagers, loadWorkers, saveWorkers, loadTaskTemplates, saveTaskTemplates } from '@/lib/store';
 
 export function useSettings() {
   const [company, setCompany] = useState<CompanyProfile>(loadCompany);
   const [siteManagers, setSiteManagers] = useState<SiteManager[]>(loadSiteManagers);
   const [workers, setWorkers] = useState<PredefinedWorker[]>(loadWorkers);
+  const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>(loadTaskTemplates);
 
   const updateCompany = useCallback((c: CompanyProfile) => {
     setCompany(c);
