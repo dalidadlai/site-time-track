@@ -65,6 +65,12 @@ export default function SettingsPage({
     setWName(''); setWRole(''); setWOpen(false);
   };
 
+  const handleAddTemplate = () => {
+    if (!ttDesc.trim()) return;
+    onAddTaskTemplate({ workArea: ttWorkArea.trim(), description: ttDesc.trim() });
+    setTtWorkArea(''); setTtDesc(''); setTtOpen(false);
+  };
+
   return (
     <div className="min-h-screen pb-24">
       <header className="px-4 pt-6 pb-4">
