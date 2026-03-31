@@ -75,7 +75,16 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [copyDate, setCopyDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [copySourceId, setCopySourceId] = useState('');
 
+  // Multi-day task creation state
+  const [multiTasks, setMultiTasks] = useState<MultiDayTask[]>([]);
+  const [mtWorkArea, setMtWorkArea] = useState('');
+  const [mtDesc, setMtDesc] = useState('');
+  const [mtSmId, setMtSmId] = useState('');
+  const [mtWorkerOpen, setMtWorkerOpen] = useState<string | null>(null);
+  const [mtSelectedWorkerId, setMtSelectedWorkerId] = useState('');
+
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
+  const isMultiDay = selectedDates.length > 1;
 
   const handleAdd = () => {
     if (selectedDates.length === 0) return;
