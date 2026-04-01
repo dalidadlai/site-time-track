@@ -60,6 +60,9 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [contactPhone, setContactPhone] = useState('');
   const [po, setPo] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [pdfOpen, setPdfOpen] = useState(false);
+  const [pdfStartDate, setPdfStartDate] = useState<Date | undefined>(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [pdfEndDate, setPdfEndDate] = useState<Date | undefined>(endOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectMode, setSelectMode] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
