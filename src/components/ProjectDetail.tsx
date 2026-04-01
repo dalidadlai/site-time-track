@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, Trash2, FileText, Pencil, Copy, CalendarDays, UserPlus, X } from 'lucide-react';
+import { startOfWeek, endOfWeek, subWeeks, startOfMonth, endOfMonth } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
