@@ -392,27 +392,44 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
         })}
       </div>
 
-      {/* This Week PDF button */}
+      {/* Generate PDF dialog */}
       {sortedDays.length > 0 && !selectMode && (
         <div className="px-4 mt-4">
-          <Button variant="outline" className="w-full gap-2" onClick={() => {
-            const now = new Date();
-            const dayOfWeek = now.getDay();
-            const monday = new Date(now);
-            monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-            const sunday = new Date(monday);
-            sunday.setDate(monday.getDate() + 6);
-            const monStr = format(monday, 'yyyy-MM-dd');
-            const sunStr = format(sunday, 'yyyy-MM-dd');
-            const weekIds = sortedDays.filter(dw => dw.date >= monStr && dw.date <= sunStr).map(dw => dw.id);
-            if (weekIds.length === 0) {
-              toast({ title: 'No dayworks found this week' });
-              return;
-            }
-            onGeneratePdf(weekIds);
-          }}>
-            <CalendarDays className="w-4 h-4" /> Generate This Week PDF
-          </Button>
+          <Dialog open={pdfOpen} onOpenChange={setPdfOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full gap-2">
+                <CalendarDays className="w-4 h-4" /> Generate PDF
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="mx-4 max-w-md max-h-[90vh] overflow-y-auto">
+              <DialogHeader><DialogTitle>Generate PDF Report</DialogTitle></DialogHeader>
+              <div className="space-y-4 mt-2">
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => applyPdfPreset('thisWeek')}>This Week</Button>
+                  <Button size="sm" variant="outline" onClick={() => applyPdfPreset('last2Weeks')}>Last 2 Weeks</Button>
+                  <Button size="sm" variant="outline" onClick={() => applyPdfPreset('thisMonth')}>This Month</Button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Start Date</Label>
+                    <Input type="date" className="mt-1" value={pdfStartDate ? format(pdfStartDate, 'yyyy-MM-dd') : ''}
+                      onChange={e => setPdfStartDate(e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined)} />
+                  </div>
+                  <div>
+                    <Label>End Date</Label>
+                    <Input type="date" className="mt-1" value={pdfEndDate ? format(pdfEndDate, 'yyyy-MM-dd') : ''}
+                      onChange={e => setPdfEndDate(e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined)} />
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {pdfMatchedIds.length} daywork{pdfMatchedIds.length !== 1 ? 's' : ''} found in range
+                </p>
+                <Button className="w-full gap-2" onClick={handlePdfGenerate} disabled={pdfMatchedIds.length === 0}>
+                  <FileText className="w-4 h-4" /> Generate PDF ({pdfMatchedIds.length})
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       )}
 
