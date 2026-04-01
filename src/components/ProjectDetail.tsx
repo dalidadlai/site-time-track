@@ -88,6 +88,36 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [mtSelectedWorkerId, setMtSelectedWorkerId] = useState('');
 
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
+  const pdfMatchedIds = useMemo(() => {
+    if (!pdfStartDate || !pdfEndDate) return [];
+    const s = format(pdfStartDate, 'yyyy-MM-dd');
+    const e = format(pdfEndDate, 'yyyy-MM-dd');
+    return sortedDays.filter(dw => dw.date >= s && dw.date <= e).map(dw => dw.id);
+  }, [pdfStartDate, pdfEndDate, sortedDays]);
+
+  const applyPdfPreset = (preset: 'thisWeek' | 'last2Weeks' | 'thisMonth') => {
+    const now = new Date();
+    if (preset === 'thisWeek') {
+      setPdfStartDate(startOfWeek(now, { weekStartsOn: 1 }));
+      setPdfEndDate(endOfWeek(now, { weekStartsOn: 1 }));
+    } else if (preset === 'last2Weeks') {
+      setPdfStartDate(startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }));
+      setPdfEndDate(endOfWeek(now, { weekStartsOn: 1 }));
+    } else {
+      setPdfStartDate(startOfMonth(now));
+      setPdfEndDate(endOfMonth(now));
+    }
+  };
+
+  const handlePdfGenerate = () => {
+    if (pdfMatchedIds.length === 0) {
+      toast({ title: 'No dayworks found in selected range' });
+      return;
+    }
+    onGeneratePdf(pdfMatchedIds);
+    setPdfOpen(false);
+  };
+
   const isMultiDay = selectedDates.length > 1;
 
   const handleAddMultiDayTask = () => {
