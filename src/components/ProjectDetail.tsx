@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, Trash2, FileText, Pencil, Copy, CalendarDays, UserPlus, X } from 'lucide-react';
+import { startOfWeek, endOfWeek, subWeeks, startOfMonth, endOfMonth } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +60,9 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [contactPhone, setContactPhone] = useState('');
   const [po, setPo] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [pdfOpen, setPdfOpen] = useState(false);
+  const [pdfStartDate, setPdfStartDate] = useState<Date | undefined>(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [pdfEndDate, setPdfEndDate] = useState<Date | undefined>(endOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectMode, setSelectMode] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
@@ -84,6 +88,36 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [mtSelectedWorkerId, setMtSelectedWorkerId] = useState('');
 
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
+  const pdfMatchedIds = useMemo(() => {
+    if (!pdfStartDate || !pdfEndDate) return [];
+    const s = format(pdfStartDate, 'yyyy-MM-dd');
+    const e = format(pdfEndDate, 'yyyy-MM-dd');
+    return sortedDays.filter(dw => dw.date >= s && dw.date <= e).map(dw => dw.id);
+  }, [pdfStartDate, pdfEndDate, sortedDays]);
+
+  const applyPdfPreset = (preset: 'thisWeek' | 'last2Weeks' | 'thisMonth') => {
+    const now = new Date();
+    if (preset === 'thisWeek') {
+      setPdfStartDate(startOfWeek(now, { weekStartsOn: 1 }));
+      setPdfEndDate(endOfWeek(now, { weekStartsOn: 1 }));
+    } else if (preset === 'last2Weeks') {
+      setPdfStartDate(startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }));
+      setPdfEndDate(endOfWeek(now, { weekStartsOn: 1 }));
+    } else {
+      setPdfStartDate(startOfMonth(now));
+      setPdfEndDate(endOfMonth(now));
+    }
+  };
+
+  const handlePdfGenerate = () => {
+    if (pdfMatchedIds.length === 0) {
+      toast({ title: 'No dayworks found in selected range' });
+      return;
+    }
+    onGeneratePdf(pdfMatchedIds);
+    setPdfOpen(false);
+  };
+
   const isMultiDay = selectedDates.length > 1;
 
   const handleAddMultiDayTask = () => {
@@ -358,27 +392,44 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
         })}
       </div>
 
-      {/* This Week PDF button */}
+      {/* Generate PDF dialog */}
       {sortedDays.length > 0 && !selectMode && (
         <div className="px-4 mt-4">
-          <Button variant="outline" className="w-full gap-2" onClick={() => {
-            const now = new Date();
-            const dayOfWeek = now.getDay();
-            const monday = new Date(now);
-            monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-            const sunday = new Date(monday);
-            sunday.setDate(monday.getDate() + 6);
-            const monStr = format(monday, 'yyyy-MM-dd');
-            const sunStr = format(sunday, 'yyyy-MM-dd');
-            const weekIds = sortedDays.filter(dw => dw.date >= monStr && dw.date <= sunStr).map(dw => dw.id);
-            if (weekIds.length === 0) {
-              toast({ title: 'No dayworks found this week' });
-              return;
-            }
-            onGeneratePdf(weekIds);
-          }}>
-            <CalendarDays className="w-4 h-4" /> Generate This Week PDF
-          </Button>
+          <Dialog open={pdfOpen} onOpenChange={setPdfOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full gap-2">
+                <CalendarDays className="w-4 h-4" /> Generate PDF
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="mx-4 max-w-md max-h-[90vh] overflow-y-auto">
+              <DialogHeader><DialogTitle>Generate PDF Report</DialogTitle></DialogHeader>
+              <div className="space-y-4 mt-2">
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => applyPdfPreset('thisWeek')}>This Week</Button>
+                  <Button size="sm" variant="outline" onClick={() => applyPdfPreset('last2Weeks')}>Last 2 Weeks</Button>
+                  <Button size="sm" variant="outline" onClick={() => applyPdfPreset('thisMonth')}>This Month</Button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Start Date</Label>
+                    <Input type="date" className="mt-1" value={pdfStartDate ? format(pdfStartDate, 'yyyy-MM-dd') : ''}
+                      onChange={e => setPdfStartDate(e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined)} />
+                  </div>
+                  <div>
+                    <Label>End Date</Label>
+                    <Input type="date" className="mt-1" value={pdfEndDate ? format(pdfEndDate, 'yyyy-MM-dd') : ''}
+                      onChange={e => setPdfEndDate(e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined)} />
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {pdfMatchedIds.length} daywork{pdfMatchedIds.length !== 1 ? 's' : ''} found in range
+                </p>
+                <Button className="w-full gap-2" onClick={handlePdfGenerate} disabled={pdfMatchedIds.length === 0}>
+                  <FileText className="w-4 h-4" /> Generate PDF ({pdfMatchedIds.length})
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       )}
 
