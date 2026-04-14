@@ -87,13 +87,18 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [mtWorkerOpen, setMtWorkerOpen] = useState<string | null>(null);
   const [mtSelectedWorkerId, setMtSelectedWorkerId] = useState('');
 
+  const [pdfSignedOnly, setPdfSignedOnly] = useState(false);
+
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
   const pdfMatchedIds = useMemo(() => {
     if (!pdfStartDate || !pdfEndDate) return [];
     const s = format(pdfStartDate, 'yyyy-MM-dd');
     const e = format(pdfEndDate, 'yyyy-MM-dd');
-    return sortedDays.filter(dw => dw.date >= s && dw.date <= e).map(dw => dw.id);
-  }, [pdfStartDate, pdfEndDate, sortedDays]);
+    return sortedDays
+      .filter(dw => dw.date >= s && dw.date <= e)
+      .filter(dw => !pdfSignedOnly || (dw.signatureData && dw.signatureData.length > 0))
+      .map(dw => dw.id);
+  }, [pdfStartDate, pdfEndDate, sortedDays, pdfSignedOnly]);
 
   const applyPdfPreset = (preset: 'thisWeek' | 'last2Weeks' | 'thisMonth') => {
     const now = new Date();
@@ -421,8 +426,12 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                       onChange={e => setPdfEndDate(e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined)} />
                   </div>
                 </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="pdfSignedOnly" checked={pdfSignedOnly} onCheckedChange={(v) => setPdfSignedOnly(!!v)} />
+                  <Label htmlFor="pdfSignedOnly" className="text-sm cursor-pointer">Signed only</Label>
+                </div>
                 <p className="text-sm text-muted-foreground">
-                  {pdfMatchedIds.length} daywork{pdfMatchedIds.length !== 1 ? 's' : ''} found in range
+                  {pdfMatchedIds.length} daywork{pdfMatchedIds.length !== 1 ? 's' : ''} found{pdfSignedOnly ? ' (signed)' : ''}
                 </p>
                 <Button className="w-full gap-2" onClick={handlePdfGenerate} disabled={pdfMatchedIds.length === 0}>
                   <FileText className="w-4 h-4" /> Generate PDF ({pdfMatchedIds.length})
