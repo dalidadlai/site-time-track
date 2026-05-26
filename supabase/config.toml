@@ -1,0 +1,4 @@
+project_id = "hsmbxtmruaipdwxofpro"
+
+[functions.improve-description]
+verify_jwt = false

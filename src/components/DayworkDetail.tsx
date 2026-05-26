@@ -3,6 +3,7 @@ import { ArrowLeft, Plus, Trash2, UserPlus, Clock, ChevronDown, ChevronUp, MapPi
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { ImproveWithAI } from './ImproveWithAI';
 import { Label } from '@/components/ui/label';
 import { DayworkRecord, SiteManager, PredefinedWorker, Task, WorkerLog, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
 import { format } from 'date-fns';
@@ -303,7 +304,10 @@ export default function DayworkDetail({
               <Input value={taskWorkArea} onChange={e => setTaskWorkArea(e.target.value)} placeholder="e.g. Level 1, Zone A" className="mt-1 h-11 text-base" />
             </div>
             <div>
-              <Label>Description of Works *</Label>
+              <div className="flex items-center justify-between">
+                <Label>Description of Works *</Label>
+                <ImproveWithAI value={taskDesc} onChange={setTaskDesc} />
+              </div>
               <Textarea value={taskDesc} onChange={e => setTaskDesc(e.target.value)} placeholder={"e.g.\n1. Strip formwork\n2. Clean and oil panels\n3. Refix to next pour"} className="mt-1 text-base min-h-[100px]" />
             </div>
             <div>
@@ -334,7 +338,10 @@ export default function DayworkDetail({
               <Input value={editTaskWorkArea} onChange={e => setEditTaskWorkArea(e.target.value)} className="mt-1 h-11 text-base" />
             </div>
             <div>
-              <Label>Description of Works *</Label>
+              <div className="flex items-center justify-between">
+                <Label>Description of Works *</Label>
+                <ImproveWithAI value={editTaskDesc} onChange={setEditTaskDesc} />
+              </div>
               <Textarea value={editTaskDesc} onChange={e => setEditTaskDesc(e.target.value)} className="mt-1 text-base min-h-[100px]" />
             </div>
             <div>
