@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Project, DayworkRecord, SiteManager, PredefinedWorker, dayworkTotalHours, generateId } from '@/lib/types';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
+import { ImproveWithAI } from './ImproveWithAI';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
@@ -545,6 +546,9 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                   <div className="border rounded-lg p-3 space-y-2">
                     <Input value={mtWorkArea} onChange={e => setMtWorkArea(e.target.value)} placeholder="Work area (e.g. Level 1)" className="h-9 text-sm" />
                     <Textarea value={mtDesc} onChange={e => setMtDesc(e.target.value)} placeholder="Task description" className="text-sm min-h-[60px]" />
+                    <div className="flex justify-end">
+                      <ImproveWithAI value={mtDesc} onChange={setMtDesc} />
+                    </div>
                     <Select value={mtSmId} onValueChange={setMtSmId}>
                       <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Site manager" /></SelectTrigger>
                       <SelectContent>
