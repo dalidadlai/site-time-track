@@ -369,14 +369,16 @@ export default function DayworkDetail({
           <div className="space-y-3 mt-2">
             <div>
               <Label>Select Worker</Label>
-              <Select value={selectedWorkerId} onValueChange={setSelectedWorkerId}>
-                <SelectTrigger className="mt-1 h-11 text-base"><SelectValue placeholder="Choose worker" /></SelectTrigger>
-                <SelectContent>
-                  {workers.map(w => (
-                    <SelectItem key={w.id} value={w.id}>{w.name}{w.role ? ` (${w.role})` : ''}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <select
+                value={selectedWorkerId}
+                onChange={(e) => setSelectedWorkerId(e.target.value)}
+                className="mt-1 h-11 w-full rounded-md border border-input bg-background px-3 text-base"
+              >
+                <option value="">Choose worker</option>
+                {workers.map(w => (
+                  <option key={w.id} value={w.id}>{w.name}{w.role ? ` (${w.role})` : ''}</option>
+                ))}
+              </select>
             </div>
             <Button onClick={handleAddWorkerLog} disabled={!selectedWorkerId} className="w-full h-12 text-base gap-2">
               <Check className="w-5 h-5" /> Done
