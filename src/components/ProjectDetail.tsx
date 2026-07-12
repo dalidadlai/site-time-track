@@ -523,14 +523,16 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                       {/* Add worker to this task */}
                       {mtWorkerOpen === mt.id ? (
                         <div className="flex gap-2">
-                          <Select value={mtSelectedWorkerId} onValueChange={setMtSelectedWorkerId}>
-                            <SelectTrigger className="h-9 text-sm flex-1"><SelectValue placeholder="Choose worker" /></SelectTrigger>
-                            <SelectContent>
-                              {workers.map(w => (
-                                <SelectItem key={w.id} value={w.id}>{w.name}{w.role ? ` (${w.role})` : ''}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <select
+                            value={mtSelectedWorkerId}
+                            onChange={(e) => setMtSelectedWorkerId(e.target.value)}
+                            className="h-9 flex-1 rounded-md border border-input bg-background px-2 text-sm"
+                          >
+                            <option value="">Choose worker</option>
+                            {workers.map(w => (
+                              <option key={w.id} value={w.id}>{w.name}{w.role ? ` (${w.role})` : ''}</option>
+                            ))}
+                          </select>
                           <Button size="sm" disabled={!mtSelectedWorkerId} onClick={() => addWorkerToMultiTask(mt.id)} className="h-9">Add</Button>
                         </div>
                       ) : (
