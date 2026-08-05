@@ -1,4 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+
+// Remembers scroll position + expanded months per project across navigation
+const viewStateCache: Record<string, { scrollY: number; openMonths: string[] }> = {};
 import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, ChevronDown, Trash2, FileText, Pencil, Copy, CalendarDays, UserPlus, X } from 'lucide-react';
 import { startOfWeek, endOfWeek, subWeeks, startOfMonth, endOfMonth } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
@@ -109,7 +112,29 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
     }));
   }, [project.dayworks]);
 
-  const [openMonths, setOpenMonths] = useState<Set<string>>(() => new Set(monthGroups.slice(0, 1).map(g => g.key)));
+  const [openMonths, setOpenMonths] = useState<Set<string>>(() => {
+    const cached = viewStateCache[project.id];
+    if (cached) return new Set(cached.openMonths);
+    return new Set(monthGroups.slice(0, 1).map(g => g.key));
+  });
+
+  // Restore scroll position when coming back from a daywork, and remember it on leave
+  const openMonthsRef = useRef(openMonths);
+  openMonthsRef.current = openMonths;
+
+  useEffect(() => {
+    const cached = viewStateCache[project.id];
+    if (cached?.scrollY) {
+      requestAnimationFrame(() => window.scrollTo(0, cached.scrollY));
+    }
+    return () => {
+      viewStateCache[project.id] = {
+        scrollY: window.scrollY,
+        openMonths: [...openMonthsRef.current],
+      };
+    };
+  }, [project.id]);
+
   const toggleMonth = (key: string) => {
     setOpenMonths(prev => {
       const next = new Set(prev);
