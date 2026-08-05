@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, Trash2, FileText, Pencil, Copy, CalendarDays, UserPlus, X } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, ChevronDown, Trash2, FileText, Pencil, Copy, CalendarDays, UserPlus, X } from 'lucide-react';
 import { startOfWeek, endOfWeek, subWeeks, startOfMonth, endOfMonth } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
@@ -91,6 +91,33 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [pdfSignedOnly, setPdfSignedOnly] = useState(false);
 
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
+
+  // Group daywork records by month (newest month first)
+  const monthGroups = useMemo(() => {
+    const map = new Map<string, DayworkRecord[]>();
+    for (const dw of sortedDays) {
+      const key = dw.date.slice(0, 7); // yyyy-MM
+      const list = map.get(key);
+      if (list) list.push(dw);
+      else map.set(key, [dw]);
+    }
+    return [...map.entries()].map(([key, days]) => ({
+      key,
+      label: format(new Date(key + '-01T00:00:00'), 'MMMM yyyy'),
+      days,
+      hours: days.reduce((sum, d) => sum + dayworkTotalHours(d), 0),
+    }));
+  }, [project.dayworks]);
+
+  const [openMonths, setOpenMonths] = useState<Set<string>>(() => new Set(monthGroups.slice(0, 1).map(g => g.key)));
+  const toggleMonth = (key: string) => {
+    setOpenMonths(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
   const pdfMatchedIds = useMemo(() => {
     if (!pdfStartDate || !pdfEndDate) return [];
     const s = format(pdfStartDate, 'yyyy-MM-dd');
@@ -332,7 +359,23 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
           </div>
         )}
 
-        {sortedDays.map((dw, i) => {
+        {monthGroups.map(group => {
+          const isOpen = openMonths.has(group.key);
+          return (
+            <div key={group.key} className="space-y-3">
+              <button
+                onClick={() => toggleMonth(group.key)}
+                className="w-full flex items-center justify-between bg-secondary/60 rounded-lg px-4 py-3 active-scale"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  {isOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
+                  <span className="font-semibold truncate">{group.label}</span>
+                </div>
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {group.days.length} day{group.days.length !== 1 ? 's' : ''} · {group.hours.toFixed(1)}h
+                </span>
+              </button>
+              {isOpen && group.days.map((dw, i) => {
           const totalHrs = dayworkTotalHours(dw);
           return (
             <div key={dw.id} className="bg-card rounded-lg shadow-sm border p-4 active-scale cursor-pointer animate-fade-in"
@@ -393,6 +436,9 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </div>
               </div>
+            </div>
+          );
+              })}
             </div>
           );
         })}
