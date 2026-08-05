@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Project, DayworkRecord, SiteManager, PredefinedWorker, dayworkTotalHours, generateId } from '@/lib/types';
+import { Project, DayworkRecord, SiteManager, PredefinedWorker, dayworkTotalHours, calculateWorkerHours, generateId } from '@/lib/types';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { ImproveWithAI } from './ImproveWithAI';
