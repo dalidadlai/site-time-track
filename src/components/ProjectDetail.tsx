@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, Trash2, FileText, Pencil, Copy, CalendarDays, UserPlus, X } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, ChevronDown, Trash2, FileText, Pencil, Copy, CalendarDays, UserPlus, X } from 'lucide-react';
 import { startOfWeek, endOfWeek, subWeeks, startOfMonth, endOfMonth } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
@@ -91,6 +91,33 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [pdfSignedOnly, setPdfSignedOnly] = useState(false);
 
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
+
+  // Group daywork records by month (newest month first)
+  const monthGroups = useMemo(() => {
+    const map = new Map<string, DayworkRecord[]>();
+    for (const dw of sortedDays) {
+      const key = dw.date.slice(0, 7); // yyyy-MM
+      const list = map.get(key);
+      if (list) list.push(dw);
+      else map.set(key, [dw]);
+    }
+    return [...map.entries()].map(([key, days]) => ({
+      key,
+      label: format(new Date(key + '-01T00:00:00'), 'MMMM yyyy'),
+      days,
+      hours: days.reduce((sum, d) => sum + dayworkTotalHours(d), 0),
+    }));
+  }, [project.dayworks]);
+
+  const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
+  const toggleMonth = (key: string) => {
+    setCollapsedMonths(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
   const pdfMatchedIds = useMemo(() => {
     if (!pdfStartDate || !pdfEndDate) return [];
     const s = format(pdfStartDate, 'yyyy-MM-dd');
