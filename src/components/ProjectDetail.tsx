@@ -112,7 +112,29 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
     }));
   }, [project.dayworks]);
 
-  const [openMonths, setOpenMonths] = useState<Set<string>>(() => new Set(monthGroups.slice(0, 1).map(g => g.key)));
+  const [openMonths, setOpenMonths] = useState<Set<string>>(() => {
+    const cached = viewStateCache[project.id];
+    if (cached) return new Set(cached.openMonths);
+    return new Set(monthGroups.slice(0, 1).map(g => g.key));
+  });
+
+  // Restore scroll position when coming back from a daywork, and remember it on leave
+  const openMonthsRef = useRef(openMonths);
+  openMonthsRef.current = openMonths;
+
+  useEffect(() => {
+    const cached = viewStateCache[project.id];
+    if (cached?.scrollY) {
+      requestAnimationFrame(() => window.scrollTo(0, cached.scrollY));
+    }
+    return () => {
+      viewStateCache[project.id] = {
+        scrollY: window.scrollY,
+        openMonths: [...openMonthsRef.current],
+      };
+    };
+  }, [project.id]);
+
   const toggleMonth = (key: string) => {
     setOpenMonths(prev => {
       const next = new Set(prev);
