@@ -359,7 +359,23 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
           </div>
         )}
 
-        {sortedDays.map((dw, i) => {
+        {monthGroups.map(group => {
+          const isOpen = openMonths.has(group.key);
+          return (
+            <div key={group.key} className="space-y-3">
+              <button
+                onClick={() => toggleMonth(group.key)}
+                className="w-full flex items-center justify-between bg-secondary/60 rounded-lg px-4 py-3 active-scale"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  {isOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
+                  <span className="font-semibold truncate">{group.label}</span>
+                </div>
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {group.days.length} day{group.days.length !== 1 ? 's' : ''} · {group.hours.toFixed(1)}h
+                </span>
+              </button>
+              {isOpen && group.days.map((dw, i) => {
           const totalHrs = dayworkTotalHours(dw);
           return (
             <div key={dw.id} className="bg-card rounded-lg shadow-sm border p-4 active-scale cursor-pointer animate-fade-in"
@@ -420,6 +436,9 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </div>
               </div>
+            </div>
+          );
+              })}
             </div>
           );
         })}
