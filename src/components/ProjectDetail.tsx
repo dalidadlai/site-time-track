@@ -407,6 +407,23 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                       </span>
                     </div>
                     {dw.siteContactName && <p className="text-xs text-muted-foreground mt-1">Contact: {dw.siteContactName}</p>}
+                    {(() => {
+                      const totals = new Map<string, number>();
+                      dw.tasks.forEach(t => t.workerLogs.forEach(w => {
+                        const name = w.workerName || 'Worker';
+                        totals.set(name, (totals.get(name) || 0) + calculateWorkerHours(w));
+                      }));
+                      if (totals.size === 0) return null;
+                      return (
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
+                          {[...totals.entries()].map(([name, hrs]) => (
+                            <span key={name} className="text-xs text-muted-foreground">
+                              {name} <span className="font-medium text-foreground">{hrs.toFixed(1)}h</span>
+                            </span>
+                          ))}
+                        </div>
+                      );
+                    })()}
                     <div className="mt-1.5">
                       {dw.signatureData ? (
                         <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100 text-[10px] px-2 py-0">Signed</Badge>
