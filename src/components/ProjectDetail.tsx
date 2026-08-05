@@ -109,9 +109,9 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
     }));
   }, [project.dayworks]);
 
-  const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
+  const [openMonths, setOpenMonths] = useState<Set<string>>(() => new Set(monthGroups.slice(0, 1).map(g => g.key)));
   const toggleMonth = (key: string) => {
-    setCollapsedMonths(prev => {
+    setOpenMonths(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key); else next.add(key);
       return next;
