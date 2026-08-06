@@ -20,6 +20,24 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const h = Math.floor(i / 2);
+  return `${String(h).padStart(2, '0')}:${i % 2 === 0 ? '00' : '30'}`;
+});
+
+function TimeSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const options = TIME_OPTIONS.includes(value) || !value ? TIME_OPTIONS : [value, ...TIME_OPTIONS];
+  return (
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+    >
+      {options.map(t => <option key={t} value={t}>{t}</option>)}
+    </select>
+  );
+}
+
 interface DayworkDetailProps {
   daywork: DayworkRecord;
   projectName: string;
@@ -232,24 +250,28 @@ export default function DayworkDetail({
                             </Button>
                           </div>
                         </div>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-3 gap-2 items-end">
                           <div>
                             <Label className="text-xs text-muted-foreground">Start</Label>
-                            <Input type="time" value={log.startTime}
-                              onChange={e => onUpdateWorkerLog(task.id, log.id, { startTime: e.target.value })}
-                              className="mt-1 h-9 text-sm" />
+                            <TimeSelect value={log.startTime}
+                              onChange={v => onUpdateWorkerLog(task.id, log.id, { startTime: v })} />
                           </div>
                           <div>
                             <Label className="text-xs text-muted-foreground">Finish</Label>
-                            <Input type="time" value={log.finishTime}
-                              onChange={e => onUpdateWorkerLog(task.id, log.id, { finishTime: e.target.value })}
-                              className="mt-1 h-9 text-sm" />
+                            <TimeSelect value={log.finishTime}
+                              onChange={v => onUpdateWorkerLog(task.id, log.id, { finishTime: v })} />
                           </div>
                           <div>
-                            <Label className="text-xs text-muted-foreground">Break (hrs)</Label>
-                            <Input type="number" step="0.25" value={log.breakHours}
-                              onChange={e => onUpdateWorkerLog(task.id, log.id, { breakHours: parseFloat(e.target.value) || 0 })}
-                              className="mt-1 h-9 text-sm" min={0} />
+                            <Label className="text-xs text-muted-foreground">Break 0.5h</Label>
+                            <label className="mt-1 h-9 flex items-center gap-2 rounded-md border border-input px-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 accent-primary"
+                                checked={(log.breakHours || 0) > 0}
+                                onChange={e => onUpdateWorkerLog(task.id, log.id, { breakHours: e.target.checked ? 0.5 : 0 })}
+                              />
+                              <span className="text-sm text-muted-foreground">Yes</span>
+                            </label>
                           </div>
                         </div>
                       </div>
