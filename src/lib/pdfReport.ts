@@ -1,12 +1,19 @@
 import { Project, CompanyProfile, SiteManager, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
 import { format } from 'date-fns';
 
-export function generateDayworkPdf(project: Project, company: CompanyProfile, siteManagers: SiteManager[], dayworkIds?: string[]) {
+export function generateDayworkPdf(project: Project, company: CompanyProfile, siteManagers: SiteManager[], dayworkIds?: string[], siteManagerId?: string) {
   const printWindow = window.open('', '_blank');
   if (!printWindow) return;
 
   const allDays = [...project.dayworks].sort((a, b) => a.date.localeCompare(b.date));
-  const selectedDays = dayworkIds ? allDays.filter(dw => dayworkIds.includes(dw.id)) : allDays;
+  let selectedDays = dayworkIds ? allDays.filter(dw => dayworkIds.includes(dw.id)) : allDays;
+
+  // Optionally restrict the report to tasks under one site manager
+  if (siteManagerId) {
+    selectedDays = selectedDays
+      .map(dw => ({ ...dw, tasks: dw.tasks.filter(t => t.siteManagerId === siteManagerId) }))
+      .filter(dw => dw.tasks.length > 0);
+  }
 
   if (selectedDays.length === 0) return;
 

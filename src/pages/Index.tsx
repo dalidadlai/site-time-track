@@ -84,7 +84,7 @@ const Index = () => {
           }}
           onEditDaywork={(id, data) => updateDaywork(project.id, id, data)}
           onDeleteDaywork={(id) => deleteDaywork(project.id, id)}
-          onGeneratePdf={(dayworkIds) => generateDayworkPdf(project, company, siteManagers, dayworkIds)}
+          onGeneratePdf={(dayworkIds, siteManagerId) => generateDayworkPdf(project, company, siteManagers, dayworkIds, siteManagerId)}
         />
       </div>
     );

@@ -36,7 +36,7 @@ interface ProjectDetailProps {
   onAddDayworkWithTasks: (data: DayworkRecord) => void;
   onEditDaywork: (id: string, data: Partial<DayworkRecord>) => void;
   onDeleteDaywork: (id: string) => void;
-  onGeneratePdf: (dayworkIds: string[]) => void;
+  onGeneratePdf: (dayworkIds: string[], siteManagerId?: string) => void;
   onNavigateToDaywork?: (dayworkId: string) => void;
 }
 
@@ -92,6 +92,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [mtSelectedWorkerId, setMtSelectedWorkerId] = useState('');
 
   const [pdfSignedOnly, setPdfSignedOnly] = useState(false);
+  const [pdfSmId, setPdfSmId] = useState<string>('');
 
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
 
@@ -150,8 +151,9 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
     return sortedDays
       .filter(dw => dw.date >= s && dw.date <= e)
       .filter(dw => !pdfSignedOnly || (dw.signatureData && dw.signatureData.length > 0))
+      .filter(dw => !pdfSmId || dw.tasks.some(t => t.siteManagerId === pdfSmId))
       .map(dw => dw.id);
-  }, [pdfStartDate, pdfEndDate, sortedDays, pdfSignedOnly]);
+  }, [pdfStartDate, pdfEndDate, sortedDays, pdfSignedOnly, pdfSmId]);
 
   const applyPdfPreset = (preset: 'thisWeek' | 'last2Weeks' | 'thisMonth') => {
     const now = new Date();
@@ -172,7 +174,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
       toast({ title: 'No dayworks found in selected range' });
       return;
     }
-    onGeneratePdf(pdfMatchedIds);
+    onGeneratePdf(pdfMatchedIds, pdfSmId || undefined);
     setPdfOpen(false);
   };
 
@@ -519,8 +521,20 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                   <Checkbox id="pdfSignedOnly" checked={pdfSignedOnly} onCheckedChange={(v) => setPdfSignedOnly(!!v)} />
                   <Label htmlFor="pdfSignedOnly" className="text-sm cursor-pointer">Signed only</Label>
                 </div>
+                <div>
+                  <Label htmlFor="pdfSm">Site Manager</Label>
+                  <select
+                    id="pdfSm"
+                    className="mt-1 w-full h-11 rounded-md border border-input bg-background px-3 text-sm"
+                    value={pdfSmId}
+                    onChange={e => setPdfSmId(e.target.value)}
+                  >
+                    <option value="">All site managers</option>
+                    {siteManagers.map(sm => <option key={sm.id} value={sm.id}>{sm.name}</option>)}
+                  </select>
+                </div>
                 <p className="text-sm text-muted-foreground">
-                  {pdfMatchedIds.length} daywork{pdfMatchedIds.length !== 1 ? 's' : ''} found{pdfSignedOnly ? ' (signed)' : ''}
+                  {pdfMatchedIds.length} daywork{pdfMatchedIds.length !== 1 ? 's' : ''} found{pdfSignedOnly ? ' (signed)' : ''}{pdfSmId ? ' · filtered by site manager' : ''}
                 </p>
                 <Button className="w-full gap-2" onClick={handlePdfGenerate} disabled={pdfMatchedIds.length === 0}>
                   <FileText className="w-4 h-4" /> Generate PDF ({pdfMatchedIds.length})
