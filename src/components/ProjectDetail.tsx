@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 
 // Remembers scroll position + expanded months per project across navigation
 const viewStateCache: Record<string, { scrollY: number; openMonths: string[] }> = {};
-import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, ChevronDown, Trash2, FileText, Pencil, Copy, CalendarDays, UserPlus, X } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, ChevronDown, Trash2, FileText, Pencil, Copy, CalendarDays, UserPlus, X, Users } from 'lucide-react';
 import { startOfWeek, endOfWeek, subWeeks, startOfMonth, endOfMonth } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
