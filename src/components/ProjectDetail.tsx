@@ -93,8 +93,13 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
 
   const [pdfSignedOnly, setPdfSignedOnly] = useState(false);
   const [pdfSmId, setPdfSmId] = useState<string>('');
+  const [filterSmId, setFilterSmId] = useState<string>('');
 
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
+  const filteredDays = useMemo(() => {
+    if (!filterSmId) return sortedDays;
+    return sortedDays.filter(dw => dw.tasks.some(t => t.siteManagerId === filterSmId));
+  }, [sortedDays, filterSmId]);
 
   // Group daywork records by month (newest month first)
   const monthGroups = useMemo(() => {
