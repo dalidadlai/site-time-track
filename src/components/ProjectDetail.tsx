@@ -104,7 +104,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   // Group daywork records by month (newest month first)
   const monthGroups = useMemo(() => {
     const map = new Map<string, DayworkRecord[]>();
-    for (const dw of sortedDays) {
+    for (const dw of filteredDays) {
       const key = dw.date.slice(0, 7); // yyyy-MM
       const list = map.get(key);
       if (list) list.push(dw);
@@ -116,7 +116,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
       days,
       hours: days.reduce((sum, d) => sum + dayworkTotalHours(d), 0),
     }));
-  }, [project.dayworks]);
+  }, [filteredDays]);
 
   const [openMonths, setOpenMonths] = useState<Set<string>>(() => {
     const cached = viewStateCache[project.id];
