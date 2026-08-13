@@ -381,13 +381,38 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
       </header>
 
       <div className="px-4 space-y-3">
-        {sortedDays.length === 0 && (
+        {sortedDays.length > 0 && (
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <select
+                className="w-full h-11 pl-9 pr-8 rounded-md border border-input bg-background text-sm appearance-none"
+                value={filterSmId}
+                onChange={e => setFilterSmId(e.target.value)}
+              >
+                <option value="">All site managers</option>
+                {siteManagers.map(sm => <option key={sm.id} value={sm.id}>{sm.name}</option>)}
+              </select>
+            </div>
+            {filterSmId && (
+              <Button variant="ghost" size="sm" onClick={() => setFilterSmId('')} className="shrink-0 active-scale">
+                Clear
+              </Button>
+            )}
+          </div>
+        )}
+
+        {filteredDays.length === 0 && (
           <div className="text-center py-16 animate-fade-in">
             <div className="w-16 h-16 rounded-2xl bg-secondary mx-auto mb-4 flex items-center justify-center">
               <CalendarIcon className="w-8 h-8 text-muted-foreground" />
             </div>
-            <p className="text-muted-foreground font-medium">No daywork records</p>
-            <p className="text-sm text-muted-foreground mt-1">Add a daily record to start tracking</p>
+            <p className="text-muted-foreground font-medium">
+              {filterSmId ? 'No daywork records for this site manager' : 'No daywork records'}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {filterSmId ? 'Try another manager or clear the filter' : 'Add a daily record to start tracking'}
+            </p>
           </div>
         )}
 
