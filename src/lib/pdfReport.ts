@@ -190,3 +190,138 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
   printWindow.document.close();
   setTimeout(() => printWindow.print(), 500);
 }
+
+// Compact Job Sheet: covers multiple days in one continuous sheet,
+// each worker shown with TOTAL HOURS only (no start/finish times).
+export function generateJobSheetPdf(project: Project, company: CompanyProfile, siteManagers: SiteManager[], dayworkIds?: string[], siteManagerId?: string) {
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) return;
+
+  const allDays = [...project.dayworks].sort((a, b) => a.date.localeCompare(b.date));
+  let days = dayworkIds ? allDays.filter(dw => dayworkIds.includes(dw.id)) : allDays;
+
+  if (siteManagerId) {
+    days = days
+      .map(dw => ({ ...dw, tasks: dw.tasks.filter(t => t.siteManagerId === siteManagerId) }))
+      .filter(dw => dw.tasks.length > 0);
+  }
+  if (days.length === 0) return;
+
+  const fmt = (d: string) => format(new Date(d + 'T00:00:00'), 'EEE, d MMM yyyy');
+  const rangeLabel = days.length === 1
+    ? fmt(days[0].date)
+    : `${fmt(days[0].date)}  —  ${fmt(days[days.length - 1].date)}  (${days.length} days)`;
+
+  const grandTotal = days.reduce((s, dw) => s + dayworkTotalHours(dw), 0);
+
+  const workerMap = new Map<string, number>();
+  days.forEach(dw => dw.tasks.forEach(t => t.workerLogs.forEach(l => {
+    const name = l.workerName || 'Unknown';
+    workerMap.set(name, (workerMap.get(name) || 0) + calculateWorkerHours(l));
+  })));
+
+  const styles = `
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: 'Inter', Arial, sans-serif; color: #1a1a2e; padding: 24px; font-size: 11px; }
+      .header-bar { background: #c2702a; color: white; padding: 20px 24px 14px; margin: -24px -24px 0; display: flex; align-items: center; gap: 16px; }
+      .header-logo { height: 48px; width: auto; background: white; border-radius: 4px; padding: 4px; }
+      .company-name { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+      .company-details { font-size: 10px; color: rgba(255,255,255,0.85); line-height: 1.5; }
+      .header-divider { height: 3px; background: linear-gradient(to right,#a35a1f,#d4853a,#a35a1f); margin: 0 -24px 14px; }
+      .title { font-size: 15px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
+      .meta { color: #555; font-size: 10px; line-height: 1.6; }
+      .meta strong { color: #1a1a2e; }
+      h2 { font-size: 12px; font-weight: 600; margin: 16px 0 4px; border-bottom: 2px solid #c2702a; padding-bottom: 3px; }
+      table { width: 100%; border-collapse: collapse; margin: 4px 0 10px; }
+      th, td { border: 1px solid #ddd; padding: 4px 8px; text-align: left; vertical-align: top; }
+      th { background: #f5f0eb; font-weight: 600; font-size: 9px; text-transform: uppercase; letter-spacing: 0.4px; }
+      .hours { text-align: right; width: 70px; font-variant-numeric: tabular-nums; }
+      .total-row { font-weight: 600; background: #faf6f1; }
+      .day-block { page-break-inside: avoid; }
+      .sig-section { margin-top: 32px; page-break-inside: avoid; max-width: 320px; }
+      .sig-img { max-height: 60px; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; }
+      .sig-line { border-bottom: 1px solid #333; height: 48px; margin-bottom: 6px; }
+      .sig-label { font-size: 10px; color: #666; }
+      @page { margin: 20mm 15mm; size: A4; }
+      @media print { body { padding: 0; } .header-bar { margin: 0; } .header-divider { margin: 0 0 14px; } }
+    </style>
+  `;
+
+  const dayBlocks = days.map(dw => {
+    const rows = dw.tasks.map(task => {
+      const sm = siteManagers.find(s => s.id === task.siteManagerId);
+      const workerRows = task.workerLogs.map(l =>
+        `<tr><td>${l.workerName}${l.workerRole ? ' (' + l.workerRole + ')' : ''}</td><td class="hours">${calculateWorkerHours(l).toFixed(1)}</td></tr>`
+      ).join('');
+      return `
+        <tr>
+          <td style="width:110px;">${task.workArea || '—'}</td>
+          <td><span style="white-space:pre-line;">${task.description}</span>${sm ? `<div style="color:#777;margin-top:3px;">Site Manager: ${sm.name}${sm.phone ? ' · ' + sm.phone : ''}</div>` : ''}</td>
+          <td style="padding:0;">
+            <table style="margin:0;border:none;">${workerRows || '<tr><td>—</td><td class="hours">0.0</td></tr>'}
+              <tr class="total-row"><td>Total</td><td class="hours">${taskTotalHours(task).toFixed(1)}</td></tr>
+            </table>
+          </td>
+        </tr>`;
+    }).join('');
+
+    return `
+      <div class="day-block">
+        <h2>${fmt(dw.date)} — ${dayworkTotalHours(dw).toFixed(1)} hrs</h2>
+        <table>
+          <thead><tr><th>Work Area</th><th>Description</th><th style="width:210px;">Workers / Total Hours</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }).join('');
+
+  const workerSummary = `
+    <h2>Hours by Worker</h2>
+    <table>
+      <thead><tr><th>Worker</th><th class="hours">Total Hours</th></tr></thead>
+      <tbody>
+        ${[...workerMap.entries()].sort((a, b) => b[1] - a[1]).map(([n, h]) => `<tr><td>${n}</td><td class="hours">${h.toFixed(1)}</td></tr>`).join('')}
+        <tr class="total-row"><td>Grand Total</td><td class="hours">${grandTotal.toFixed(1)}</td></tr>
+      </tbody>
+    </table>`;
+
+  const lastSigned = [...days].reverse().find(d => d.signatureData);
+  const sigHtml = lastSigned?.signatureData?.startsWith('data:')
+    ? `<img src="${lastSigned.signatureData}" class="sig-img" alt="Signature" />`
+    : '<div class="sig-line"></div>';
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html><head><title>Job Sheet - ${project.name}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    ${styles}</head>
+    <body>
+      <div class="header-bar">
+        ${company.logo ? `<img src="${company.logo}" class="header-logo" alt="Logo" />` : ''}
+        <div>
+          <div class="company-name">${company.name || 'Job Sheet'}</div>
+          <div class="company-details">${[company.address, company.email, company.phone].filter(Boolean).join(' &nbsp;·&nbsp; ')}</div>
+        </div>
+      </div>
+      <div class="header-divider"></div>
+      <div class="title">Job Sheet</div>
+      <div class="meta" style="margin-bottom:12px;">
+        <strong>Project:</strong> ${project.name}<br>
+        <strong>Client:</strong> ${project.client || '—'}<br>
+        <strong>Site Address:</strong> ${project.siteAddress || '—'}<br>
+        <strong>Dates:</strong> ${rangeLabel}
+      </div>
+      ${dayBlocks}
+      ${workerSummary}
+      <div class="sig-section">
+        ${sigHtml}
+        <div class="sig-label">Site Manager / Client Signature</div>
+        <div class="sig-label" style="margin-top:10px;">Name: ${lastSigned?.signatureName || '_______________________'}</div>
+        <div class="sig-label" style="margin-top:6px;">Date: ${lastSigned?.signatureDate || '_______________________'}</div>
+      </div>
+    </body></html>
+  `);
+  printWindow.document.close();
+  setTimeout(() => printWindow.print(), 500);
+}
