@@ -36,7 +36,7 @@ interface ProjectDetailProps {
   onAddDayworkWithTasks: (data: DayworkRecord) => void;
   onEditDaywork: (id: string, data: Partial<DayworkRecord>) => void;
   onDeleteDaywork: (id: string) => void;
-  onGeneratePdf: (dayworkIds: string[], siteManagerId?: string) => void;
+  onGeneratePdf: (dayworkIds: string[], siteManagerId?: string, mode?: 'report' | 'jobsheet') => void;
   onNavigateToDaywork?: (dayworkId: string) => void;
 }
 
@@ -94,6 +94,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [pdfSignedOnly, setPdfSignedOnly] = useState(false);
   const [pdfSmId, setPdfSmId] = useState<string>('');
   const [filterSmId, setFilterSmId] = useState<string>('');
+  const [pdfMode, setPdfMode] = useState<'report' | 'jobsheet'>('report');
 
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
   const filteredDays = useMemo(() => {
@@ -179,7 +180,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
       toast({ title: 'No dayworks found in selected range' });
       return;
     }
-    onGeneratePdf(pdfMatchedIds, pdfSmId || undefined);
+    onGeneratePdf(pdfMatchedIds, pdfSmId || undefined, pdfMode);
     setPdfOpen(false);
   };
 
@@ -528,8 +529,17 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
               </Button>
             </DialogTrigger>
             <DialogContent className="mx-4 max-w-md max-h-[90vh] overflow-y-auto">
-              <DialogHeader><DialogTitle>Generate PDF Report</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>Generate PDF</DialogTitle></DialogHeader>
               <div className="space-y-4 mt-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant={pdfMode === 'report' ? 'default' : 'outline'} className="h-11"
+                    onClick={() => setPdfMode('report')}>Daywork Report</Button>
+                  <Button variant={pdfMode === 'jobsheet' ? 'default' : 'outline'} className="h-11"
+                    onClick={() => setPdfMode('jobsheet')}>Job Sheet</Button>
+                </div>
+                {pdfMode === 'jobsheet' && (
+                  <p className="text-xs text-muted-foreground">Job Sheet: multi-day compact sheet, each worker shows total hours only.</p>
+                )}
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" onClick={() => applyPdfPreset('thisWeek')}>This Week</Button>
                   <Button size="sm" variant="outline" onClick={() => applyPdfPreset('last2Weeks')}>Last 2 Weeks</Button>
@@ -567,7 +577,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                   {pdfMatchedIds.length} daywork{pdfMatchedIds.length !== 1 ? 's' : ''} found{pdfSignedOnly ? ' (signed)' : ''}{pdfSmId ? ' · filtered by site manager' : ''}
                 </p>
                 <Button className="w-full gap-2" onClick={handlePdfGenerate} disabled={pdfMatchedIds.length === 0}>
-                  <FileText className="w-4 h-4" /> Generate PDF ({pdfMatchedIds.length})
+                  <FileText className="w-4 h-4" /> {pdfMode === 'jobsheet' ? 'Generate Job Sheet' : 'Generate PDF'} ({pdfMatchedIds.length})
                 </Button>
               </div>
             </DialogContent>

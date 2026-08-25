@@ -5,7 +5,7 @@ import ProjectsList from '@/components/ProjectsList';
 import ProjectDetail from '@/components/ProjectDetail';
 import DayworkDetail from '@/components/DayworkDetail';
 import SettingsPage from '@/components/SettingsPage';
-import { generateDayworkPdf } from '@/lib/pdfReport';
+import { generateDayworkPdf, generateJobSheetPdf } from '@/lib/pdfReport';
 
 type View =
   | { screen: 'projects' }
@@ -84,7 +84,7 @@ const Index = () => {
           }}
           onEditDaywork={(id, data) => updateDaywork(project.id, id, data)}
           onDeleteDaywork={(id) => deleteDaywork(project.id, id)}
-          onGeneratePdf={(dayworkIds, siteManagerId) => generateDayworkPdf(project, company, siteManagers, dayworkIds, siteManagerId)}
+          onGeneratePdf={(dayworkIds, siteManagerId, mode) => (mode === 'jobsheet' ? generateJobSheetPdf : generateDayworkPdf)(project, company, siteManagers, dayworkIds, siteManagerId)}
         />
       </div>
     );
