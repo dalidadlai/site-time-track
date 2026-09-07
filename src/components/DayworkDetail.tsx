@@ -1,11 +1,12 @@
-import React, { useState, useMemo } from 'react';
-import { ArrowLeft, Plus, Trash2, UserPlus, Clock, ChevronDown, ChevronUp, MapPin, Check, Pencil, ClipboardList, AlertTriangle } from 'lucide-react';
+import React, { useState, useMemo, useRef } from 'react';
+import { ArrowLeft, Plus, Trash2, UserPlus, Clock, ChevronDown, ChevronUp, MapPin, Check, Pencil, ClipboardList, AlertTriangle, MoreVertical, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ImproveWithAI } from './ImproveWithAI';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar } from '@/components/ui/calendar';
 import { DayworkRecord, SiteManager, PredefinedWorker, Task, WorkerLog, DayPlan, PlanEntry, calculateWorkerHours, taskTotalHours, dayworkTotalHours, defaultPlanHours } from '@/lib/types';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
@@ -16,6 +17,9 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -52,6 +56,7 @@ interface DayworkDetailProps {
   onUpdateWorkerLog: (taskId: string, logId: string, updates: Partial<WorkerLog>) => void;
   onDeleteWorkerLog: (taskId: string, logId: string) => void;
   onUpdateSignature: (data: { signatureData?: string; signatureName?: string; signatureDate?: string }) => void;
+  onCopyTask?: (taskId: string, date: string) => void;
   plan?: DayPlan;
   onSavePlan?: (date: string, entries: PlanEntry[]) => void;
   // Actual hours per worker aggregated across ALL dayworks on this date (plan is per day, not per record)
@@ -61,7 +66,7 @@ interface DayworkDetailProps {
 export default function DayworkDetail({
   daywork, projectName, siteManagers, workers, onBack,
   onAddTask, onEditTask, onDeleteTask, onAddWorkerLog, onUpdateWorkerLog, onDeleteWorkerLog,
-  onUpdateSignature, plan, onSavePlan, dayActuals,
+  onUpdateSignature, onCopyTask, plan, onSavePlan, dayActuals,
 }: DayworkDetailProps) {
   const [taskOpen, setTaskOpen] = useState(false);
   const [taskWorkArea, setTaskWorkArea] = useState('');
@@ -72,6 +77,27 @@ export default function DayworkDetail({
   // Default to collapsed so days with many tasks stay tidy; tap a task to expand
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [sigOpen, setSigOpen] = useState(false);
+
+  // Copy single task to another date (three-dot menu or long-press on the task)
+  const [copyTaskId, setCopyTaskId] = useState<string | null>(null);
+  const [copyDate, setCopyDate] = useState<Date | undefined>(undefined);
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelPress = () => { if (pressTimer.current) { clearTimeout(pressTimer.current); pressTimer.current = null; } };
+  const startPress = (taskId: string) => {
+    cancelPress();
+    pressTimer.current = setTimeout(() => {
+      pressTimer.current = null;
+      setCopyTaskId(taskId);
+      setCopyDate(undefined);
+    }, 550);
+  };
+  const handleCopyTask = () => {
+    if (!copyTaskId || !copyDate || !onCopyTask) return;
+    onCopyTask(copyTaskId, format(copyDate, 'yyyy-MM-dd'));
+    setCopyTaskId(null);
+    setCopyDate(undefined);
+    toast({ title: '✓ Task copied', description: `Copied to ${format(copyDate, 'EEE, d MMM yyyy')}` });
+  };
 
   // Plan hours state: tick who is on site; hours auto-fill by weekday
   const [planOpen, setPlanOpen] = useState(false);
@@ -298,7 +324,16 @@ export default function DayworkDetail({
           const sm = siteManagers.find(s => s.id === task.siteManagerId);
           return (
             <div key={task.id} className="bg-card rounded-lg shadow-sm border overflow-hidden animate-fade-in" style={{ animationDelay: `${i * 60}ms` }}>
-              <div className="p-4 flex items-center justify-between cursor-pointer active-scale" onClick={() => toggleTask(task.id)}>
+              <div
+                className="p-4 flex items-center justify-between cursor-pointer active-scale select-none"
+                onClick={() => toggleTask(task.id)}
+                onPointerDown={() => onCopyTask && startPress(task.id)}
+                onPointerUp={cancelPress}
+                onPointerCancel={cancelPress}
+                onPointerLeave={cancelPress}
+                onPointerMove={cancelPress}
+                onContextMenu={(e) => { if (onCopyTask) { e.preventDefault(); setCopyTaskId(task.id); setCopyDate(undefined); } }}
+              >
                 <div className="flex-1 min-w-0">
                   {task.workArea && (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-accent-foreground bg-accent/50 px-2 py-0.5 rounded mb-1">
@@ -313,14 +348,28 @@ export default function DayworkDetail({
                   {task.siteManagerName && <p className="text-xs text-muted-foreground mt-0.5">SM: {task.siteManagerName}</p>}
                 </div>
                 <div className="flex items-center gap-1 ml-2">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary"
-                    onClick={(e) => { e.stopPropagation(); openEditTask(task); }}>
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={(e) => { e.stopPropagation(); setDeleteTaskId(task.id); }}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}>
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenuItem onClick={() => openEditTask(task)}>
+                        <Pencil className="w-4 h-4 mr-2" /> Edit
+                      </DropdownMenuItem>
+                      {onCopyTask && (
+                        <DropdownMenuItem onClick={() => { setCopyTaskId(task.id); setCopyDate(undefined); }}>
+                          <Copy className="w-4 h-4 mr-2" /> Copy to date…
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteTaskId(task.id)}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   {isExpanded ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
                 </div>
               </div>
@@ -478,6 +527,29 @@ export default function DayworkDetail({
             </div>
             <Button onClick={handleEditTask} disabled={!editTaskDesc.trim()} className="w-full h-12 text-base gap-2">
               <Check className="w-5 h-5" /> Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Copy Task to Date Dialog */}
+      <Dialog open={!!copyTaskId} onOpenChange={(v) => !v && setCopyTaskId(null)}>
+        <DialogContent className="mx-4 max-w-md">
+          <DialogHeader><DialogTitle>Copy Task to Date</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <p className="text-xs text-muted-foreground">
+              Task, workers and times are copied as-is. If a record already exists on the chosen date, the task is added to it.
+            </p>
+            <div className="flex justify-center">
+              <Calendar
+                mode="single"
+                selected={copyDate}
+                onSelect={setCopyDate}
+                className="rounded-md border"
+              />
+            </div>
+            <Button onClick={handleCopyTask} disabled={!copyDate} className="w-full h-12 text-base gap-2">
+              <Copy className="w-5 h-5" /> Copy Task
             </Button>
           </div>
         </DialogContent>

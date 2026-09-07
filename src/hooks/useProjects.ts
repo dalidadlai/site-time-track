@@ -94,10 +94,40 @@ export function useProjects() {
     } : p));
   }, [projects, persist]);
 
+  // Copy a single task to another date: appends to the existing daywork on that
+  // date, or creates a new daywork (carrying contact/PO) if none exists yet.
+  const copyTaskToDate = useCallback((projectId: string, sourceDayworkId: string, taskId: string, date: string) => {
+    const project = projects.find(p => p.id === projectId);
+    const source = project?.dayworks.find(d => d.id === sourceDayworkId);
+    const task = source?.tasks.find(t => t.id === taskId);
+    if (!project || !source || !task) return;
+    const copied: Task = {
+      ...task,
+      id: generateId(),
+      workerLogs: task.workerLogs.map(w => ({ ...w, id: generateId() })),
+    };
+    const target = project.dayworks.find(d => d.date === date);
+    persist(projects.map(p => {
+      if (p.id !== projectId) return p;
+      if (target) {
+        return { ...p, dayworks: p.dayworks.map(d => d.id === target.id ? { ...d, tasks: [...d.tasks, copied] } : d) };
+      }
+      const dw: DayworkRecord = {
+        id: generateId(),
+        date,
+        siteContactName: source.siteContactName,
+        siteContactPhone: source.siteContactPhone,
+        purchaseOrder: source.purchaseOrder,
+        tasks: [copied],
+      };
+      return { ...p, dayworks: [...p.dayworks, dw] };
+    }));
+  }, [projects, persist]);
+
   return {
     projects, addProject, updateProject, deleteProject,
     addDaywork, addDayworkWithTasks, updateDaywork, deleteDaywork,
-    addTask, updateTask, deleteTask,
+    addTask, updateTask, deleteTask, copyTaskToDate,
     addWorkerLog, updateWorkerLog, deleteWorkerLog,
   };
 }
