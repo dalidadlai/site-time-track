@@ -1,5 +1,7 @@
 import { Project, CompanyProfile, SiteManager, PredefinedWorker } from './types';
 import { DEFAULT_LOGO } from './defaultLogo';
+import { schedulePush } from './cloudSync';
+
 
 const KEYS = {
   projects: 'dw-projects',
