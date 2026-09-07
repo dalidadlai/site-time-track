@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, Building2, Users, HardHat, Upload, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ArrowLeft, Plus, Trash2, Building2, Users, HardHat, Upload, X, LogOut } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
