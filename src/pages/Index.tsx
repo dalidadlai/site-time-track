@@ -7,6 +7,7 @@ import ProjectDetail from '@/components/ProjectDetail';
 import DayworkDetail from '@/components/DayworkDetail';
 import SettingsPage from '@/components/SettingsPage';
 import { generateDayworkPdf, generateJobSheetPdf } from '@/lib/pdfReport';
+import { calculateWorkerHours } from '@/lib/types';
 
 type View =
   | { screen: 'projects' }
@@ -102,6 +103,14 @@ const Index = () => {
       return null;
     }
 
+    // Plan hours are per person per day — aggregate actuals across all records on this date
+    const dayActuals = new Map<string, number>();
+    project.dayworks.filter(d => d.date === dw.date).forEach(d =>
+      d.tasks.forEach(t => t.workerLogs.forEach(l => {
+        dayActuals.set(l.workerName, (dayActuals.get(l.workerName) || 0) + calculateWorkerHours(l));
+      }))
+    );
+
     const detail = (
       <DayworkDetail
         daywork={dw}
@@ -109,6 +118,7 @@ const Index = () => {
         siteManagers={siteManagers}
         workers={workers}
         plan={plans.find(p => p.projectId === project.id && p.date === dw.date)}
+        dayActuals={dayActuals}
         onSavePlan={(date, entries) => savePlan(project.id, date, entries)}
         onBack={() => setView({ screen: 'project', projectId: project.id })}
         onAddTask={(task) => addTask(project.id, dw.id, task)}
