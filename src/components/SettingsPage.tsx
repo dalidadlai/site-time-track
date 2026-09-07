@@ -187,7 +187,21 @@ export default function SettingsPage({
             ))}
           </div>
         </section>
+
+        {/* Account */}
+        <section className="space-y-3 pb-10">
+          <h2 className="flex items-center gap-2 text-base font-semibold">
+            <LogOut className="w-4 h-4 text-primary" /> Account
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {userEmail ? `Signed in as ${userEmail}. Your data syncs automatically to all your devices.` : 'Your data syncs automatically.'}
+          </p>
+          <Button variant="outline" className="h-12 w-full" onClick={() => supabase.auth.signOut()}>
+            Sign out
+          </Button>
+        </section>
       </div>
+
     </div>
   );
 }
