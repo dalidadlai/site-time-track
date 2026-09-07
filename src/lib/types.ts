@@ -58,6 +58,19 @@ export interface Project {
   dayworks: DayworkRecord[];
 }
 
+export interface PlanEntry {
+  workerId: string;
+  workerName: string;
+  hours: number;
+}
+
+export interface DayPlan {
+  id: string;
+  projectId: string;
+  date: string;
+  entries: PlanEntry[];
+}
+
 export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
