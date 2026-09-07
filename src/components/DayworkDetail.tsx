@@ -234,12 +234,15 @@ export default function DayworkDetail({
             {planComparison.allMatch ? (
               <span className="inline-flex items-center text-[11px] font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-md">✓ Matches plan</span>
             ) : (
-              planComparison.rows.filter(r => Math.abs(r.diff) >= 0.001).map(r => (
-                <p key={r.name} className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
-                  <AlertTriangle className="w-3 h-3" />
-                  {r.name}: planned {r.planned}h / actual {r.actual.toFixed(1)}h ({r.diff > 0 ? '+' : ''}{r.diff.toFixed(1)}h)
-                </p>
-              ))
+              <>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Plan vs actual — whole day (all records on this date)</p>
+                {planComparison.rows.filter(r => Math.abs(r.diff) >= 0.001).map(r => (
+                  <p key={r.name} className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
+                    <AlertTriangle className="w-3 h-3" />
+                    {r.name}: planned {r.planned}h / actual {r.actual.toFixed(1)}h ({r.diff > 0 ? '+' : ''}{r.diff.toFixed(1)}h)
+                  </p>
+                ))}
+              </>
             )}
           </div>
         )}
