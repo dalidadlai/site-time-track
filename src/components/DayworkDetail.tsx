@@ -56,6 +56,7 @@ interface DayworkDetailProps {
   onUpdateWorkerLog: (taskId: string, logId: string, updates: Partial<WorkerLog>) => void;
   onDeleteWorkerLog: (taskId: string, logId: string) => void;
   onUpdateSignature: (data: { signatureData?: string; signatureName?: string; signatureDate?: string }) => void;
+  onCopyTask?: (taskId: string, date: string) => void;
   plan?: DayPlan;
   onSavePlan?: (date: string, entries: PlanEntry[]) => void;
   // Actual hours per worker aggregated across ALL dayworks on this date (plan is per day, not per record)
