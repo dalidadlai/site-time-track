@@ -100,7 +100,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
 
   // Planned hours state
   const [planOpen, setPlanOpen] = useState(false);
-  const [planDate, setPlanDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [planDates, setPlanDates] = useState<Date[]>([new Date()]);
   const [planHours, setPlanHours] = useState<Record<string, string>>({});
 
   const projectPlans = useMemo(() => plans.filter(p => p.projectId === project.id), [plans, project.id]);
@@ -110,32 +110,60 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
     return m;
   }, [projectPlans]);
 
-  const openPlanDialog = () => {
-    setPlanDate(format(new Date(), 'yyyy-MM-dd'));
-    const existing = planByDate.get(format(new Date(), 'yyyy-MM-dd'));
+  // Workers sorted by how often they are used in this project (most used first)
+  const workerUsage = useMemo(() => {
+    const m = new Map<string, number>();
+    project.dayworks.forEach(d => d.tasks.forEach(t => t.workerLogs.forEach(l => {
+      const key = l.workerId || l.workerName;
+      m.set(key, (m.get(key) || 0) + 1);
+    })));
+    projectPlans.forEach(p => p.entries.forEach(e => {
+      const key = e.workerId || e.workerName;
+      m.set(key, (m.get(key) || 0) + 1);
+    }));
+    return m;
+  }, [project.dayworks, projectPlans]);
+
+  const sortedWorkers = useMemo(() => {
+    const use = (w: PredefinedWorker) => workerUsage.get(w.id) ?? workerUsage.get(w.name) ?? 0;
+    return [...workers].sort((a, b) => use(b) - use(a) || a.name.localeCompare(b.name));
+  }, [workers, workerUsage]);
+
+  const loadPlanHoursFor = (dates: Date[]) => {
     const init: Record<string, string> = {};
-    existing?.entries.forEach(e => { init[e.workerId] = String(e.hours); });
+    if (dates.length === 1) {
+      const existing = planByDate.get(format(dates[0], 'yyyy-MM-dd'));
+      existing?.entries.forEach(e => { init[e.workerId] = String(e.hours); });
+    }
     setPlanHours(init);
+  };
+
+  const openPlanDialog = () => {
+    const today = [new Date()];
+    setPlanDates(today);
+    loadPlanHoursFor(today);
     setPlanOpen(true);
   };
 
-  const handlePlanDateChange = (date: string) => {
-    setPlanDate(date);
-    const existing = planByDate.get(date);
-    const init: Record<string, string> = {};
-    existing?.entries.forEach(e => { init[e.workerId] = String(e.hours); });
-    setPlanHours(init);
+  const handlePlanDatesChange = (dates: Date[]) => {
+    setPlanDates(dates);
+    loadPlanHoursFor(dates);
   };
 
   const handleSavePlan = () => {
-    if (!planDate) return;
-    const entries: PlanEntry[] = workers
+    if (planDates.length === 0) return;
+    const entries: PlanEntry[] = sortedWorkers
       .map(w => ({ workerId: w.id, workerName: w.name, hours: parseFloat(planHours[w.id] || '') || 0 }))
       .filter(e => e.hours > 0);
-    onSavePlan(planDate, entries);
+    const dates = [...planDates].sort((a, b) => a.getTime() - b.getTime());
+    dates.forEach(d => onSavePlan(format(d, 'yyyy-MM-dd'), entries));
     setPlanOpen(false);
-    toast({ title: entries.length > 0 ? '✓ Plan saved' : '✓ Plan cleared', description: `${format(new Date(planDate + 'T00:00:00'), 'EEE, d MMM yyyy')} · ${entries.length} worker${entries.length !== 1 ? 's' : ''}` });
+    toast({
+      title: entries.length > 0 ? '✓ Plan saved' : '✓ Plan cleared',
+      description: `${dates.length} day${dates.length !== 1 ? 's' : ''} · ${entries.length} worker${entries.length !== 1 ? 's' : ''}`,
+    });
   };
+
 
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
   const filteredDays = useMemo(() => {
