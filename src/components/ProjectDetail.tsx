@@ -361,9 +361,6 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
         workerLogs: t.workerLogs.map(w => ({
           ...w,
           id: generateId(),
-          startTime: '',
-          finishTime: '',
-          breakHours: 0.5,
         })),
       })),
     };
@@ -891,7 +888,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
               </Select>
             </div>
             <p className="text-xs text-muted-foreground">
-              All tasks, work areas, site managers, and workers will be copied. Start/finish times will be cleared so you can fill them in.
+              All tasks, work areas, site managers, workers and their start/finish times will be copied as-is — adjust afterwards only where the new day differs.
             </p>
             <Button onClick={handleCopy} disabled={!copyDate || !copySourceId} className="w-full">
               Copy & Create Daywork
