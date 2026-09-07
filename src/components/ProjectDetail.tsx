@@ -68,12 +68,6 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [copyDate, setCopyDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [copySourceId, setCopySourceId] = useState('');
 
-  const [mtWorkArea, setMtWorkArea] = useState('');
-  const [mtDesc, setMtDesc] = useState('');
-  const [mtSmId, setMtSmId] = useState('');
-  const [mtWorkerOpen, setMtWorkerOpen] = useState<string | null>(null);
-  const [mtSelectedWorkerId, setMtSelectedWorkerId] = useState('');
-
   const [pdfSignedOnly, setPdfSignedOnly] = useState(false);
   const [pdfSmId, setPdfSmId] = useState<string>('');
   const [filterSmId, setFilterSmId] = useState<string>('');
