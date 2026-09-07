@@ -562,24 +562,40 @@ export default function DayworkDetail({
         <DialogContent className="mx-4 max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Plan Hours — {format(new Date(daywork.date + 'T00:00:00'), 'EEE, d MMM yyyy')}</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
+            <p className="text-xs text-muted-foreground">
+              Tick who is on site — hours fill in automatically (Mon–Thu 9.5h · Fri 8.5h · Sat 6h). Tap a number to change it.
+            </p>
             {workers.length === 0 && (
               <p className="text-sm text-muted-foreground">Add workers in Settings first.</p>
             )}
-            {sortedWorkers.map(w => (
-              <div key={w.id} className="flex items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{w.name}</p>
-                  {w.role && <p className="text-xs text-muted-foreground">{w.role}</p>}
+            {sortedWorkers.map(w => {
+              const on = !!planChecked[w.id];
+              return (
+                <div key={w.id} className={`flex items-center gap-3 rounded-lg p-2 ${on ? 'bg-primary/10 border border-primary/30' : ''}`}>
+                  <Checkbox
+                    id={`dplan-${w.id}`}
+                    checked={on}
+                    onCheckedChange={(c) => togglePlanWorker(w.id, c === true)}
+                    className="w-5 h-5"
+                  />
+                  <label htmlFor={`dplan-${w.id}`} className="flex-1 min-w-0 cursor-pointer">
+                    <p className="text-sm font-medium truncate">{w.name}</p>
+                    {w.role && <p className="text-xs text-muted-foreground">{w.role}</p>}
+                  </label>
+                  {on && (
+                    <>
+                      <Input
+                        type="number" inputMode="decimal" step="0.5" min="0"
+                        value={planHours[w.id] || ''}
+                        onChange={e => setPlanHours(prev => ({ ...prev, [w.id]: e.target.value }))}
+                        className="w-24 text-right"
+                      />
+                      <span className="text-sm text-muted-foreground">h</span>
+                    </>
+                  )}
                 </div>
-                <Input
-                  type="number" inputMode="decimal" step="0.5" min="0" placeholder="0"
-                  value={planHours[w.id] || ''}
-                  onChange={e => setPlanHours(prev => ({ ...prev, [w.id]: e.target.value }))}
-                  className="w-24 text-right"
-                />
-                <span className="text-sm text-muted-foreground">h</span>
-              </div>
-            ))}
+              );
+            })}
             <Button onClick={handleSavePlan} className="w-full h-12 text-base gap-2">
               <Check className="w-5 h-5" /> Save Plan
             </Button>
