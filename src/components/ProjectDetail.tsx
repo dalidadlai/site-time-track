@@ -100,7 +100,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
 
   // Planned hours state
   const [planOpen, setPlanOpen] = useState(false);
-  const [planDate, setPlanDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [planDates, setPlanDates] = useState<Date[]>([new Date()]);
   const [planHours, setPlanHours] = useState<Record<string, string>>({});
 
   const projectPlans = useMemo(() => plans.filter(p => p.projectId === project.id), [plans, project.id]);
@@ -110,32 +110,60 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
     return m;
   }, [projectPlans]);
 
-  const openPlanDialog = () => {
-    setPlanDate(format(new Date(), 'yyyy-MM-dd'));
-    const existing = planByDate.get(format(new Date(), 'yyyy-MM-dd'));
+  // Workers sorted by how often they are used in this project (most used first)
+  const workerUsage = useMemo(() => {
+    const m = new Map<string, number>();
+    project.dayworks.forEach(d => d.tasks.forEach(t => t.workerLogs.forEach(l => {
+      const key = l.workerId || l.workerName;
+      m.set(key, (m.get(key) || 0) + 1);
+    })));
+    projectPlans.forEach(p => p.entries.forEach(e => {
+      const key = e.workerId || e.workerName;
+      m.set(key, (m.get(key) || 0) + 1);
+    }));
+    return m;
+  }, [project.dayworks, projectPlans]);
+
+  const sortedWorkers = useMemo(() => {
+    const use = (w: PredefinedWorker) => workerUsage.get(w.id) ?? workerUsage.get(w.name) ?? 0;
+    return [...workers].sort((a, b) => use(b) - use(a) || a.name.localeCompare(b.name));
+  }, [workers, workerUsage]);
+
+  const loadPlanHoursFor = (dates: Date[]) => {
     const init: Record<string, string> = {};
-    existing?.entries.forEach(e => { init[e.workerId] = String(e.hours); });
+    if (dates.length === 1) {
+      const existing = planByDate.get(format(dates[0], 'yyyy-MM-dd'));
+      existing?.entries.forEach(e => { init[e.workerId] = String(e.hours); });
+    }
     setPlanHours(init);
+  };
+
+  const openPlanDialog = () => {
+    const today = [new Date()];
+    setPlanDates(today);
+    loadPlanHoursFor(today);
     setPlanOpen(true);
   };
 
-  const handlePlanDateChange = (date: string) => {
-    setPlanDate(date);
-    const existing = planByDate.get(date);
-    const init: Record<string, string> = {};
-    existing?.entries.forEach(e => { init[e.workerId] = String(e.hours); });
-    setPlanHours(init);
+  const handlePlanDatesChange = (dates: Date[]) => {
+    setPlanDates(dates);
+    loadPlanHoursFor(dates);
   };
 
   const handleSavePlan = () => {
-    if (!planDate) return;
-    const entries: PlanEntry[] = workers
+    if (planDates.length === 0) return;
+    const entries: PlanEntry[] = sortedWorkers
       .map(w => ({ workerId: w.id, workerName: w.name, hours: parseFloat(planHours[w.id] || '') || 0 }))
       .filter(e => e.hours > 0);
-    onSavePlan(planDate, entries);
+    const dates = [...planDates].sort((a, b) => a.getTime() - b.getTime());
+    dates.forEach(d => onSavePlan(format(d, 'yyyy-MM-dd'), entries));
     setPlanOpen(false);
-    toast({ title: entries.length > 0 ? '✓ Plan saved' : '✓ Plan cleared', description: `${format(new Date(planDate + 'T00:00:00'), 'EEE, d MMM yyyy')} · ${entries.length} worker${entries.length !== 1 ? 's' : ''}` });
+    toast({
+      title: entries.length > 0 ? '✓ Plan saved' : '✓ Plan cleared',
+      description: `${dates.length} day${dates.length !== 1 ? 's' : ''} · ${entries.length} worker${entries.length !== 1 ? 's' : ''}`,
+    });
   };
+
 
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
   const filteredDays = useMemo(() => {
@@ -686,17 +714,26 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
           <DialogHeader><DialogTitle>Plan Hours</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
             <div>
-              <Label>Date *</Label>
-              <Input type="date" value={planDate} onChange={e => e.target.value && handlePlanDateChange(e.target.value)} className="mt-1 h-11" />
+              <Label>Dates *</Label>
+              <p className="text-xs text-muted-foreground mb-2">Tap multiple dates — the same hours are saved for every selected day.</p>
+              <Calendar
+                mode="multiple"
+                selected={planDates}
+                onSelect={(dates) => handlePlanDatesChange(dates || [])}
+                className="rounded-md border mx-auto pointer-events-auto"
+              />
+              {planDates.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">{planDates.length} date{planDates.length !== 1 ? 's' : ''} selected</p>
+              )}
             </div>
             <div>
               <Label>Planned total hours per worker</Label>
-              <p className="text-xs text-muted-foreground mb-2">Leave blank or 0 for workers not on site. Matching compares each worker's total across all tasks that day.</p>
+              <p className="text-xs text-muted-foreground mb-2">Leave blank or 0 for workers not on site. Most-used workers are listed first.</p>
               <div className="space-y-2">
-                {workers.length === 0 && (
+                {sortedWorkers.length === 0 && (
                   <p className="text-sm text-muted-foreground py-2">No workers yet — add workers in Settings first.</p>
                 )}
-                {workers.map(w => (
+                {sortedWorkers.map(w => (
                   <div key={w.id} className="flex items-center gap-2 bg-secondary/30 rounded-lg p-2.5">
                     <div className="flex-1 min-w-0">
                       <span className="text-sm font-medium">{w.name}</span>
@@ -714,9 +751,10 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                 ))}
               </div>
             </div>
-            <Button onClick={handleSavePlan} disabled={!planDate || workers.length === 0} className="w-full h-12 text-base">
-              Save Plan
+            <Button onClick={handleSavePlan} disabled={planDates.length === 0 || sortedWorkers.length === 0} className="w-full h-12 text-base">
+              Save Plan{planDates.length > 1 ? ` for ${planDates.length} days` : ''}
             </Button>
+
           </div>
         </DialogContent>
       </Dialog>
@@ -807,7 +845,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                             className="h-9 flex-1 rounded-md border border-input bg-background px-2 text-sm"
                           >
                             <option value="">Choose worker</option>
-                            {workers.map(w => (
+                            {sortedWorkers.map(w => (
                               <option key={w.id} value={w.id}>{w.name}{w.role ? ` (${w.role})` : ''}</option>
                             ))}
                           </select>
