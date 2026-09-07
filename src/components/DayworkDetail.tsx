@@ -68,7 +68,9 @@ export default function DayworkDetail({
   const [taskSmId, setTaskSmId] = useState('');
   const [workerDialogTask, setWorkerDialogTask] = useState<string | null>(null);
   const [selectedWorkerId, setSelectedWorkerId] = useState('');
-  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set(daywork.tasks.map(t => t.id)));
+  // Default to collapsed so days with many tasks stay tidy; tap a task to expand
+  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  const [summaryOpen, setSummaryOpen] = useState(true);
   const [sigOpen, setSigOpen] = useState(false);
 
   // Plan hours state
