@@ -97,23 +97,57 @@ const Index = () => {
       return null;
     }
 
+    const detail = (
+      <DayworkDetail
+        daywork={dw}
+        projectName={project.name}
+        siteManagers={siteManagers}
+        workers={workers}
+        onBack={() => setView({ screen: 'project', projectId: project.id })}
+        onAddTask={(task) => addTask(project.id, dw.id, task)}
+        onEditTask={(taskId, updates) => updateTask(project.id, dw.id, taskId, updates)}
+        onDeleteTask={(taskId) => deleteTask(project.id, dw.id, taskId)}
+        onAddWorkerLog={(taskId, log) => addWorkerLog(project.id, dw.id, taskId, log)}
+        onUpdateWorkerLog={(taskId, logId, updates) => updateWorkerLog(project.id, dw.id, taskId, logId, updates)}
+        onDeleteWorkerLog={(taskId, logId) => deleteWorkerLog(project.id, dw.id, taskId, logId)}
+        onUpdateSignature={(data) => updateDaywork(project.id, dw.id, data)}
+      />
+    );
+
+    const list = (
+      <ProjectDetail
+        project={project}
+        siteManagers={siteManagers}
+        workers={workers}
+        onBack={() => setView({ screen: 'projects' })}
+        onSelectDaywork={(id) => setView({ screen: 'daywork', projectId: project.id, dayworkId: id })}
+        onAddDaywork={(data) => {
+          const d = addDaywork(project.id, data);
+          setView({ screen: 'daywork', projectId: project.id, dayworkId: d.id });
+        }}
+        onAddDayworkWithTasks={(dw2) => {
+          addDayworkWithTasks(project.id, dw2);
+        }}
+        onEditDaywork={(id, data) => updateDaywork(project.id, id, data)}
+        onDeleteDaywork={(id) => deleteDaywork(project.id, id)}
+        onGeneratePdf={(dayworkIds, siteManagerId, mode) => (mode === 'jobsheet' ? generateJobSheetPdf : generateDayworkPdf)(project, company, siteManagers, dayworkIds, siteManagerId)}
+      />
+    );
+
     return (
-      <div className="max-w-lg mx-auto">
-        <DayworkDetail
-          daywork={dw}
-          projectName={project.name}
-          siteManagers={siteManagers}
-          workers={workers}
-          onBack={() => setView({ screen: 'project', projectId: project.id })}
-          onAddTask={(task) => addTask(project.id, dw.id, task)}
-          onEditTask={(taskId, updates) => updateTask(project.id, dw.id, taskId, updates)}
-          onDeleteTask={(taskId) => deleteTask(project.id, dw.id, taskId)}
-          onAddWorkerLog={(taskId, log) => addWorkerLog(project.id, dw.id, taskId, log)}
-          onUpdateWorkerLog={(taskId, logId, updates) => updateWorkerLog(project.id, dw.id, taskId, logId, updates)}
-          onDeleteWorkerLog={(taskId, logId) => deleteWorkerLog(project.id, dw.id, taskId, logId)}
-          onUpdateSignature={(data) => updateDaywork(project.id, dw.id, data)}
-        />
-      </div>
+      <>
+        {/* Mobile: detail only (original navigation) */}
+        <div className="md:hidden max-w-lg mx-auto">{detail}</div>
+        {/* Tablet / desktop: split view, list left + detail right, no page jump */}
+        <div className="hidden md:flex h-screen overflow-hidden">
+          <div className="w-[400px] lg:w-[440px] shrink-0 border-r overflow-y-auto">
+            {list}
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-2xl mx-auto">{detail}</div>
+          </div>
+        </div>
+      </>
     );
   }
 
