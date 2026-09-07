@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Project, DayworkRecord, SiteManager, PredefinedWorker, DayPlan, PlanEntry, dayworkTotalHours, calculateWorkerHours, generateId } from '@/lib/types';
+import { Project, DayworkRecord, SiteManager, PredefinedWorker, DayPlan, PlanEntry, dayworkTotalHours, calculateWorkerHours, generateId, defaultPlanHours } from '@/lib/types';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { ImproveWithAI } from './ImproveWithAI';
@@ -98,9 +98,11 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [filterSmId, setFilterSmId] = useState<string>('');
   const [pdfMode, setPdfMode] = useState<'report' | 'jobsheet'>('report');
 
-  // Planned hours state
+  // Planned hours state: check who is on site; hours auto-fill by weekday
+  // (Mon–Thu 9.5, Fri 8.5, Sat 6) and can be overridden per worker.
   const [planOpen, setPlanOpen] = useState(false);
   const [planDates, setPlanDates] = useState<Date[]>([new Date()]);
+  const [planChecked, setPlanChecked] = useState<Record<string, boolean>>({});
   const [planHours, setPlanHours] = useState<Record<string, string>>({});
 
   const projectPlans = useMemo(() => plans.filter(p => p.projectId === project.id), [plans, project.id]);
