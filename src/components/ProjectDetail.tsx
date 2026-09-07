@@ -751,28 +751,42 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
               )}
             </div>
             <div>
-              <Label>Planned total hours per worker</Label>
-              <p className="text-xs text-muted-foreground mb-2">Leave blank or 0 for workers not on site. Most-used workers are listed first.</p>
+              <Label>Who is on site?</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Tick the workers coming in — hours fill in automatically (Mon–Thu 9.5h · Fri 8.5h · Sat 6h). Tap a number to change it.
+              </p>
               <div className="space-y-2">
                 {sortedWorkers.length === 0 && (
                   <p className="text-sm text-muted-foreground py-2">No workers yet — add workers in Settings first.</p>
                 )}
-                {sortedWorkers.map(w => (
-                  <div key={w.id} className="flex items-center gap-2 bg-secondary/30 rounded-lg p-2.5">
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium">{w.name}</span>
-                      {w.role && <span className="text-xs text-muted-foreground ml-1">({w.role})</span>}
+                {sortedWorkers.map(w => {
+                  const on = !!planChecked[w.id];
+                  return (
+                    <div key={w.id} className={`flex items-center gap-2 rounded-lg p-2.5 ${on ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/30'}`}>
+                      <Checkbox
+                        id={`plan-${w.id}`}
+                        checked={on}
+                        onCheckedChange={(c) => togglePlanWorker(w.id, c === true, planDates[0] ?? new Date())}
+                        className="w-5 h-5"
+                      />
+                      <label htmlFor={`plan-${w.id}`} className="flex-1 min-w-0 cursor-pointer">
+                        <span className="text-sm font-medium">{w.name}</span>
+                        {w.role && <span className="text-xs text-muted-foreground ml-1">({w.role})</span>}
+                      </label>
+                      {on && (
+                        <>
+                          <Input
+                            type="number" step="0.5" min={0} max={24}
+                            value={planHours[w.id] ?? ''}
+                            onChange={e => setPlanHours(prev => ({ ...prev, [w.id]: e.target.value }))}
+                            className="w-20 h-9 text-sm text-center"
+                          />
+                          <span className="text-xs text-muted-foreground">hrs</span>
+                        </>
+                      )}
                     </div>
-                    <Input
-                      type="number" step="0.5" min={0} max={24}
-                      value={planHours[w.id] ?? ''}
-                      placeholder="0"
-                      onChange={e => setPlanHours(prev => ({ ...prev, [w.id]: e.target.value }))}
-                      className="w-20 h-9 text-sm text-center"
-                    />
-                    <span className="text-xs text-muted-foreground">hrs</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
             <Button onClick={handleSavePlan} disabled={planDates.length === 0 || sortedWorkers.length === 0} className="w-full h-12 text-base">
