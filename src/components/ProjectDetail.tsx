@@ -42,26 +42,9 @@ interface ProjectDetailProps {
   onNavigateToDaywork?: (dayworkId: string) => void;
 }
 
-interface MultiDayWorker {
-  id: string;
-  workerId: string;
-  workerName: string;
-  workerRole: string;
-  totalHours: number;
-}
-
-interface MultiDayTask {
-  id: string;
-  workArea: string;
-  description: string;
-  siteManagerId: string;
-  siteManagerName: string;
-  workers: MultiDayWorker[];
-}
-
 export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onAddDayworkWithTasks, onEditDaywork, onDeleteDaywork, onGeneratePdf, siteManagers, workers, plans, onSavePlan }: ProjectDetailProps) {
   const [open, setOpen] = useState(false);
-  const [selectedDates, setSelectedDates] = useState<Date[]>([new Date()]);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [po, setPo] = useState('');
