@@ -324,7 +324,15 @@ export default function DayworkDetail({
           const sm = siteManagers.find(s => s.id === task.siteManagerId);
           return (
             <div key={task.id} className="bg-card rounded-lg shadow-sm border overflow-hidden animate-fade-in" style={{ animationDelay: `${i * 60}ms` }}>
-              <div className="p-4 flex items-center justify-between cursor-pointer active-scale" onClick={() => toggleTask(task.id)}>
+              <div
+                className="p-4 flex items-center justify-between cursor-pointer active-scale select-none"
+                onClick={() => toggleTask(task.id)}
+                onPointerDown={() => onCopyTask && startPress(task.id)}
+                onPointerUp={cancelPress}
+                onPointerLeave={cancelPress}
+                onPointerMove={cancelPress}
+                onContextMenu={(e) => { if (onCopyTask) { e.preventDefault(); setCopyTaskId(task.id); setCopyDate(undefined); } }}
+              >
                 <div className="flex-1 min-w-0">
                   {task.workArea && (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-accent-foreground bg-accent/50 px-2 py-0.5 rounded mb-1">
@@ -339,14 +347,28 @@ export default function DayworkDetail({
                   {task.siteManagerName && <p className="text-xs text-muted-foreground mt-0.5">SM: {task.siteManagerName}</p>}
                 </div>
                 <div className="flex items-center gap-1 ml-2">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary"
-                    onClick={(e) => { e.stopPropagation(); openEditTask(task); }}>
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={(e) => { e.stopPropagation(); setDeleteTaskId(task.id); }}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}>
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenuItem onClick={() => openEditTask(task)}>
+                        <Pencil className="w-4 h-4 mr-2" /> Edit
+                      </DropdownMenuItem>
+                      {onCopyTask && (
+                        <DropdownMenuItem onClick={() => { setCopyTaskId(task.id); setCopyDate(undefined); }}>
+                          <Copy className="w-4 h-4 mr-2" /> Copy to date…
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteTaskId(task.id)}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   {isExpanded ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
                 </div>
               </div>
