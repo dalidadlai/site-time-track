@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useProjects } from '@/hooks/useProjects';
 import { useSettings } from '@/hooks/useSettings';
+import { usePlans } from '@/hooks/usePlans';
 import ProjectsList from '@/components/ProjectsList';
 import ProjectDetail from '@/components/ProjectDetail';
 import DayworkDetail from '@/components/DayworkDetail';
@@ -27,6 +28,8 @@ const Index = () => {
     siteManagers, addSiteManager, deleteSiteManager,
     workers, addWorker, deleteWorker,
   } = useSettings();
+
+  const { plans, savePlan } = usePlans();
 
   if (view.screen === 'settings') {
     return (
@@ -73,6 +76,8 @@ const Index = () => {
           project={project}
           siteManagers={siteManagers}
           workers={workers}
+          plans={plans}
+          onSavePlan={(date, entries) => savePlan(project.id, date, entries)}
           onBack={() => setView({ screen: 'projects' })}
           onSelectDaywork={(id) => setView({ screen: 'daywork', projectId: project.id, dayworkId: id })}
           onAddDaywork={(data) => {
@@ -119,6 +124,8 @@ const Index = () => {
         project={project}
         siteManagers={siteManagers}
         workers={workers}
+        plans={plans}
+        onSavePlan={(date, entries) => savePlan(project.id, date, entries)}
         onBack={() => setView({ screen: 'projects' })}
         onSelectDaywork={(id) => setView({ screen: 'daywork', projectId: project.id, dayworkId: id })}
         onAddDaywork={(data) => {

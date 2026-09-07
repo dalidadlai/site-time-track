@@ -5,6 +5,7 @@ export const KEYS = {
   company: 'dw-company',
   siteManagers: 'dw-site-managers',
   workers: 'dw-workers',
+  plans: 'dw-plans',
 };
 
 let currentUserId: string | null = null;
@@ -30,7 +31,7 @@ export async function pullFromCloud(userId: string): Promise<void> {
   try {
     const { data, error } = await supabase
       .from('user_data')
-      .select('projects, company, site_managers, workers')
+      .select('projects, company, site_managers, workers, plans')
       .eq('user_id', userId)
       .maybeSingle();
 
@@ -44,6 +45,7 @@ export async function pullFromCloud(userId: string): Promise<void> {
         company: readLocal(KEYS.company, {}),
         site_managers: readLocal(KEYS.siteManagers, []),
         workers: readLocal(KEYS.workers, []),
+        plans: readLocal(KEYS.plans, []),
       });
       return;
     }
@@ -62,6 +64,7 @@ export async function pullFromCloud(userId: string): Promise<void> {
     localStorage.setItem(KEYS.company, JSON.stringify(data.company ?? {}));
     localStorage.setItem(KEYS.siteManagers, JSON.stringify(data.site_managers ?? []));
     localStorage.setItem(KEYS.workers, JSON.stringify(data.workers ?? []));
+    localStorage.setItem(KEYS.plans, JSON.stringify(data.plans ?? []));
   } finally {
     syncing = false;
   }
@@ -75,6 +78,7 @@ async function pushNow() {
     company: readLocal(KEYS.company, {}),
     site_managers: readLocal(KEYS.siteManagers, []),
     workers: readLocal(KEYS.workers, []),
+    plans: readLocal(KEYS.plans, []),
   };
   await supabase.from('user_data').upsert(payload, { onConflict: 'user_id' });
 }

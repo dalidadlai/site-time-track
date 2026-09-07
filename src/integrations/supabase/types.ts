@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           company: Json
           created_at: string
+          plans: Json
           projects: Json
           site_managers: Json
           updated_at: string
@@ -27,6 +28,7 @@ export type Database = {
         Insert: {
           company?: Json
           created_at?: string
+          plans?: Json
           projects?: Json
           site_managers?: Json
           updated_at?: string
@@ -36,6 +38,7 @@ export type Database = {
         Update: {
           company?: Json
           created_at?: string
+          plans?: Json
           projects?: Json
           site_managers?: Json
           updated_at?: string

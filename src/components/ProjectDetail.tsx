@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 
 // Remembers scroll position + expanded months per project across navigation
 const viewStateCache: Record<string, { scrollY: number; openMonths: string[] }> = {};
-import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, ChevronDown, Trash2, FileText, Pencil, Copy, CalendarDays, UserPlus, X, Users } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, ChevronDown, Trash2, FileText, Pencil, Copy, CalendarDays, UserPlus, X, Users, ClipboardList, AlertTriangle } from 'lucide-react';
 import { startOfWeek, endOfWeek, subWeeks, startOfMonth, endOfMonth } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Project, DayworkRecord, SiteManager, PredefinedWorker, dayworkTotalHours, calculateWorkerHours, generateId } from '@/lib/types';
+import { Project, DayworkRecord, SiteManager, PredefinedWorker, DayPlan, PlanEntry, dayworkTotalHours, calculateWorkerHours, generateId } from '@/lib/types';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { ImproveWithAI } from './ImproveWithAI';
@@ -30,6 +30,8 @@ interface ProjectDetailProps {
   project: Project;
   siteManagers: SiteManager[];
   workers: PredefinedWorker[];
+  plans: DayPlan[];
+  onSavePlan: (date: string, entries: PlanEntry[]) => void;
   onBack: () => void;
   onSelectDaywork: (id: string) => void;
   onAddDaywork: (data: { date: string; siteContactName: string; siteContactPhone: string; purchaseOrder: string }) => void;
@@ -57,7 +59,7 @@ interface MultiDayTask {
   workers: MultiDayWorker[];
 }
 
-export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onAddDayworkWithTasks, onEditDaywork, onDeleteDaywork, onGeneratePdf, siteManagers, workers }: ProjectDetailProps) {
+export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onAddDayworkWithTasks, onEditDaywork, onDeleteDaywork, onGeneratePdf, siteManagers, workers, plans, onSavePlan }: ProjectDetailProps) {
   const [open, setOpen] = useState(false);
   const [selectedDates, setSelectedDates] = useState<Date[]>([new Date()]);
   const [contactName, setContactName] = useState('');
@@ -95,6 +97,45 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [pdfSmId, setPdfSmId] = useState<string>('');
   const [filterSmId, setFilterSmId] = useState<string>('');
   const [pdfMode, setPdfMode] = useState<'report' | 'jobsheet'>('report');
+
+  // Planned hours state
+  const [planOpen, setPlanOpen] = useState(false);
+  const [planDate, setPlanDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [planHours, setPlanHours] = useState<Record<string, string>>({});
+
+  const projectPlans = useMemo(() => plans.filter(p => p.projectId === project.id), [plans, project.id]);
+  const planByDate = useMemo(() => {
+    const m = new Map<string, DayPlan>();
+    projectPlans.forEach(p => m.set(p.date, p));
+    return m;
+  }, [projectPlans]);
+
+  const openPlanDialog = () => {
+    setPlanDate(format(new Date(), 'yyyy-MM-dd'));
+    const existing = planByDate.get(format(new Date(), 'yyyy-MM-dd'));
+    const init: Record<string, string> = {};
+    existing?.entries.forEach(e => { init[e.workerId] = String(e.hours); });
+    setPlanHours(init);
+    setPlanOpen(true);
+  };
+
+  const handlePlanDateChange = (date: string) => {
+    setPlanDate(date);
+    const existing = planByDate.get(date);
+    const init: Record<string, string> = {};
+    existing?.entries.forEach(e => { init[e.workerId] = String(e.hours); });
+    setPlanHours(init);
+  };
+
+  const handleSavePlan = () => {
+    if (!planDate) return;
+    const entries: PlanEntry[] = workers
+      .map(w => ({ workerId: w.id, workerName: w.name, hours: parseFloat(planHours[w.id] || '') || 0 }))
+      .filter(e => e.hours > 0);
+    onSavePlan(planDate, entries);
+    setPlanOpen(false);
+    toast({ title: entries.length > 0 ? '✓ Plan saved' : '✓ Plan cleared', description: `${format(new Date(planDate + 'T00:00:00'), 'EEE, d MMM yyyy')} · ${entries.length} worker${entries.length !== 1 ? 's' : ''}` });
+  };
 
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
   const filteredDays = useMemo(() => {
@@ -360,24 +401,29 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
             <h1 className="text-xl font-bold tracking-tight">{project.name}</h1>
             <p className="text-sm text-muted-foreground mt-0.5">{project.client}{project.siteAddress ? ` · ${project.siteAddress}` : ''}</p>
           </div>
-          {sortedDays.length > 0 && (
-            <Button
-              variant={selectMode ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => {
-                if (selectMode && selectedIds.size > 0) {
-                  handleMultiPdf();
-                } else {
-                  setSelectMode(!selectMode);
-                  setSelectedIds(new Set());
-                }
-              }}
-              className="gap-1.5 active-scale"
-            >
-              <FileText className="w-4 h-4" />
-              {selectMode ? (selectedIds.size > 0 ? `PDF (${selectedIds.size})` : 'Cancel') : 'Multi PDF'}
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={openPlanDialog} className="gap-1.5 active-scale">
+              <ClipboardList className="w-4 h-4" /> Plan Hours
             </Button>
-          )}
+            {sortedDays.length > 0 && (
+              <Button
+                variant={selectMode ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  if (selectMode && selectedIds.size > 0) {
+                    handleMultiPdf();
+                  } else {
+                    setSelectMode(!selectMode);
+                    setSelectedIds(new Set());
+                  }
+                }}
+                className="gap-1.5 active-scale"
+              >
+                <FileText className="w-4 h-4" />
+                {selectMode ? (selectedIds.size > 0 ? `PDF (${selectedIds.size})` : 'Cancel') : 'Multi PDF'}
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -478,6 +524,37 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                             <span key={name} className="text-xs text-muted-foreground">
                               {name} <span className="font-medium text-foreground">{hrs.toFixed(1)}h</span>
                             </span>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                    {(() => {
+                      const plan = planByDate.get(dw.date);
+                      if (!plan || plan.entries.length === 0) return null;
+                      const actual = new Map<string, number>();
+                      dw.tasks.forEach(t => t.workerLogs.forEach(w => {
+                        const name = w.workerName || 'Worker';
+                        actual.set(name, (actual.get(name) || 0) + calculateWorkerHours(w));
+                      }));
+                      const rows = plan.entries.map(e => {
+                        const a = actual.get(e.workerName) || 0;
+                        return { name: e.workerName, planned: e.hours, actual: a, diff: a - e.hours };
+                      });
+                      const mismatches = rows.filter(r => Math.abs(r.diff) > 0.001);
+                      if (mismatches.length === 0) {
+                        return (
+                          <div className="mt-1.5">
+                            <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100 text-[10px] px-2 py-0">✓ Matches plan</Badge>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="mt-1.5 space-y-0.5">
+                          {mismatches.map(r => (
+                            <p key={r.name} className="text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3 shrink-0" />
+                              {r.name}: planned {r.planned}h / actual {r.actual.toFixed(1)}h ({r.diff > 0 ? '+' : ''}{r.diff.toFixed(1)}h)
+                            </p>
                           ))}
                         </div>
                       );
@@ -584,6 +661,47 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
           </Dialog>
         </div>
       )}
+
+      {/* Plan Hours Dialog */}
+      <Dialog open={planOpen} onOpenChange={setPlanOpen}>
+        <DialogContent className="mx-4 max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Plan Hours</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div>
+              <Label>Date *</Label>
+              <Input type="date" value={planDate} onChange={e => e.target.value && handlePlanDateChange(e.target.value)} className="mt-1 h-11" />
+            </div>
+            <div>
+              <Label>Planned total hours per worker</Label>
+              <p className="text-xs text-muted-foreground mb-2">Leave blank or 0 for workers not on site. Matching compares each worker's total across all tasks that day.</p>
+              <div className="space-y-2">
+                {workers.length === 0 && (
+                  <p className="text-sm text-muted-foreground py-2">No workers yet — add workers in Settings first.</p>
+                )}
+                {workers.map(w => (
+                  <div key={w.id} className="flex items-center gap-2 bg-secondary/30 rounded-lg p-2.5">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium">{w.name}</span>
+                      {w.role && <span className="text-xs text-muted-foreground ml-1">({w.role})</span>}
+                    </div>
+                    <Input
+                      type="number" step="0.5" min={0} max={24}
+                      value={planHours[w.id] ?? ''}
+                      placeholder="0"
+                      onChange={e => setPlanHours(prev => ({ ...prev, [w.id]: e.target.value }))}
+                      className="w-20 h-9 text-sm text-center"
+                    />
+                    <span className="text-xs text-muted-foreground">hrs</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <Button onClick={handleSavePlan} disabled={!planDate || workers.length === 0} className="w-full h-12 text-base">
+              Save Plan
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Daywork FAB */}
       <div className="fixed bottom-6 right-4 left-4 flex justify-end gap-2">
