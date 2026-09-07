@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 
 // Remembers scroll position + expanded months per project across navigation
 const viewStateCache: Record<string, { scrollY: number; openMonths: string[] }> = {};
-import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, ChevronDown, Trash2, FileText, Pencil, Copy, CalendarDays, UserPlus, X, Users } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, ChevronDown, Trash2, FileText, Pencil, Copy, CalendarDays, UserPlus, X, Users, ClipboardList, AlertTriangle } from 'lucide-react';
 import { startOfWeek, endOfWeek, subWeeks, startOfMonth, endOfMonth } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Project, DayworkRecord, SiteManager, PredefinedWorker, dayworkTotalHours, calculateWorkerHours, generateId } from '@/lib/types';
+import { Project, DayworkRecord, SiteManager, PredefinedWorker, DayPlan, PlanEntry, dayworkTotalHours, calculateWorkerHours, generateId } from '@/lib/types';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { ImproveWithAI } from './ImproveWithAI';
@@ -30,6 +30,8 @@ interface ProjectDetailProps {
   project: Project;
   siteManagers: SiteManager[];
   workers: PredefinedWorker[];
+  plans: DayPlan[];
+  onSavePlan: (date: string, entries: PlanEntry[]) => void;
   onBack: () => void;
   onSelectDaywork: (id: string) => void;
   onAddDaywork: (data: { date: string; siteContactName: string; siteContactPhone: string; purchaseOrder: string }) => void;
@@ -57,7 +59,7 @@ interface MultiDayTask {
   workers: MultiDayWorker[];
 }
 
-export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onAddDayworkWithTasks, onEditDaywork, onDeleteDaywork, onGeneratePdf, siteManagers, workers }: ProjectDetailProps) {
+export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onAddDayworkWithTasks, onEditDaywork, onDeleteDaywork, onGeneratePdf, siteManagers, workers, plans, onSavePlan }: ProjectDetailProps) {
   const [open, setOpen] = useState(false);
   const [selectedDates, setSelectedDates] = useState<Date[]>([new Date()]);
   const [contactName, setContactName] = useState('');
@@ -95,6 +97,45 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [pdfSmId, setPdfSmId] = useState<string>('');
   const [filterSmId, setFilterSmId] = useState<string>('');
   const [pdfMode, setPdfMode] = useState<'report' | 'jobsheet'>('report');
+
+  // Planned hours state
+  const [planOpen, setPlanOpen] = useState(false);
+  const [planDate, setPlanDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [planHours, setPlanHours] = useState<Record<string, string>>({});
+
+  const projectPlans = useMemo(() => plans.filter(p => p.projectId === project.id), [plans, project.id]);
+  const planByDate = useMemo(() => {
+    const m = new Map<string, DayPlan>();
+    projectPlans.forEach(p => m.set(p.date, p));
+    return m;
+  }, [projectPlans]);
+
+  const openPlanDialog = () => {
+    setPlanDate(format(new Date(), 'yyyy-MM-dd'));
+    const existing = planByDate.get(format(new Date(), 'yyyy-MM-dd'));
+    const init: Record<string, string> = {};
+    existing?.entries.forEach(e => { init[e.workerId] = String(e.hours); });
+    setPlanHours(init);
+    setPlanOpen(true);
+  };
+
+  const handlePlanDateChange = (date: string) => {
+    setPlanDate(date);
+    const existing = planByDate.get(date);
+    const init: Record<string, string> = {};
+    existing?.entries.forEach(e => { init[e.workerId] = String(e.hours); });
+    setPlanHours(init);
+  };
+
+  const handleSavePlan = () => {
+    if (!planDate) return;
+    const entries: PlanEntry[] = workers
+      .map(w => ({ workerId: w.id, workerName: w.name, hours: parseFloat(planHours[w.id] || '') || 0 }))
+      .filter(e => e.hours > 0);
+    onSavePlan(planDate, entries);
+    setPlanOpen(false);
+    toast({ title: entries.length > 0 ? '✓ Plan saved' : '✓ Plan cleared', description: `${format(new Date(planDate + 'T00:00:00'), 'EEE, d MMM yyyy')} · ${entries.length} worker${entries.length !== 1 ? 's' : ''}` });
+  };
 
   const sortedDays = [...project.dayworks].sort((a, b) => b.date.localeCompare(a.date));
   const filteredDays = useMemo(() => {
