@@ -528,6 +528,37 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                         </div>
                       );
                     })()}
+                    {(() => {
+                      const plan = planByDate.get(dw.date);
+                      if (!plan || plan.entries.length === 0) return null;
+                      const actual = new Map<string, number>();
+                      dw.tasks.forEach(t => t.workerLogs.forEach(w => {
+                        const name = w.workerName || 'Worker';
+                        actual.set(name, (actual.get(name) || 0) + calculateWorkerHours(w));
+                      }));
+                      const rows = plan.entries.map(e => {
+                        const a = actual.get(e.workerName) || 0;
+                        return { name: e.workerName, planned: e.hours, actual: a, diff: a - e.hours };
+                      });
+                      const mismatches = rows.filter(r => Math.abs(r.diff) > 0.001);
+                      if (mismatches.length === 0) {
+                        return (
+                          <div className="mt-1.5">
+                            <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100 text-[10px] px-2 py-0">✓ Matches plan</Badge>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="mt-1.5 space-y-0.5">
+                          {mismatches.map(r => (
+                            <p key={r.name} className="text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3 shrink-0" />
+                              {r.name}: planned {r.planned}h / actual {r.actual.toFixed(1)}h ({r.diff > 0 ? '+' : ''}{r.diff.toFixed(1)}h)
+                            </p>
+                          ))}
+                        </div>
+                      );
+                    })()}
                     <div className="mt-1.5">
                       {dw.signatureData ? (
                         <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100 text-[10px] px-2 py-0">Signed</Badge>
