@@ -532,6 +532,29 @@ export default function DayworkDetail({
         </DialogContent>
       </Dialog>
 
+      {/* Copy Task to Date Dialog */}
+      <Dialog open={!!copyTaskId} onOpenChange={(v) => !v && setCopyTaskId(null)}>
+        <DialogContent className="mx-4 max-w-md">
+          <DialogHeader><DialogTitle>Copy Task to Date</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <p className="text-xs text-muted-foreground">
+              Task, workers and times are copied as-is. If a record already exists on the chosen date, the task is added to it.
+            </p>
+            <div className="flex justify-center">
+              <Calendar
+                mode="single"
+                selected={copyDate}
+                onSelect={setCopyDate}
+                className="rounded-md border"
+              />
+            </div>
+            <Button onClick={handleCopyTask} disabled={!copyDate} className="w-full h-12 text-base gap-2">
+              <Copy className="w-5 h-5" /> Copy Task
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Add Worker Dialog */}
       <Dialog open={!!workerDialogTask} onOpenChange={(v) => !v && setWorkerDialogTask(null)}>
         <DialogContent className="mx-4 max-w-md">
