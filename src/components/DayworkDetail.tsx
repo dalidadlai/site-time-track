@@ -94,20 +94,31 @@ export default function DayworkDetail({
   }, [workers, daywork.tasks, plan]);
 
 
+  const planDateObj = useMemo(() => new Date(daywork.date + 'T00:00:00'), [daywork.date]);
+
   const openPlanDialog = () => {
+    const checked: Record<string, boolean> = {};
     const init: Record<string, string> = {};
     workers.forEach(w => {
       const e = plan?.entries.find(en => en.workerId === w.id);
-      init[w.id] = e ? String(e.hours) : '';
+      if (e && e.hours > 0) { checked[w.id] = true; init[w.id] = String(e.hours); }
     });
+    setPlanChecked(checked);
     setPlanHours(init);
     setPlanOpen(true);
   };
 
+  const togglePlanWorker = (id: string, on: boolean) => {
+    setPlanChecked(prev => ({ ...prev, [id]: on }));
+    if (on) setPlanHours(prev => ({ ...prev, [id]: String(defaultPlanHours(planDateObj)) }));
+  };
+
   const handleSavePlan = () => {
     if (!onSavePlan) return;
+    const def = defaultPlanHours(planDateObj);
     const entries: PlanEntry[] = workers
-      .map(w => ({ workerId: w.id, workerName: w.name, hours: parseFloat(planHours[w.id] || '') || 0 }))
+      .filter(w => planChecked[w.id])
+      .map(w => ({ workerId: w.id, workerName: w.name, hours: parseFloat(planHours[w.id] || '') || def }))
       .filter(e => e.hours > 0);
     onSavePlan(daywork.date, entries);
     setPlanOpen(false);
