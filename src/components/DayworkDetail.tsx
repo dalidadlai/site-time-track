@@ -517,6 +517,36 @@ export default function DayworkDetail({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Plan Hours Dialog */}
+      <Dialog open={planOpen} onOpenChange={setPlanOpen}>
+        <DialogContent className="mx-4 max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Plan Hours — {format(new Date(daywork.date + 'T00:00:00'), 'EEE, d MMM yyyy')}</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            {workers.length === 0 && (
+              <p className="text-sm text-muted-foreground">Add workers in Settings first.</p>
+            )}
+            {workers.map(w => (
+              <div key={w.id} className="flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{w.name}</p>
+                  {w.role && <p className="text-xs text-muted-foreground">{w.role}</p>}
+                </div>
+                <Input
+                  type="number" inputMode="decimal" step="0.5" min="0" placeholder="0"
+                  value={planHours[w.id] || ''}
+                  onChange={e => setPlanHours(prev => ({ ...prev, [w.id]: e.target.value }))}
+                  className="w-24 text-right"
+                />
+                <span className="text-sm text-muted-foreground">h</span>
+              </div>
+            ))}
+            <Button onClick={handleSavePlan} className="w-full h-12 text-base gap-2">
+              <Check className="w-5 h-5" /> Save Plan
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
