@@ -401,24 +401,29 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
             <h1 className="text-xl font-bold tracking-tight">{project.name}</h1>
             <p className="text-sm text-muted-foreground mt-0.5">{project.client}{project.siteAddress ? ` · ${project.siteAddress}` : ''}</p>
           </div>
-          {sortedDays.length > 0 && (
-            <Button
-              variant={selectMode ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => {
-                if (selectMode && selectedIds.size > 0) {
-                  handleMultiPdf();
-                } else {
-                  setSelectMode(!selectMode);
-                  setSelectedIds(new Set());
-                }
-              }}
-              className="gap-1.5 active-scale"
-            >
-              <FileText className="w-4 h-4" />
-              {selectMode ? (selectedIds.size > 0 ? `PDF (${selectedIds.size})` : 'Cancel') : 'Multi PDF'}
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={openPlanDialog} className="gap-1.5 active-scale">
+              <ClipboardList className="w-4 h-4" /> Plan Hours
             </Button>
-          )}
+            {sortedDays.length > 0 && (
+              <Button
+                variant={selectMode ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  if (selectMode && selectedIds.size > 0) {
+                    handleMultiPdf();
+                  } else {
+                    setSelectMode(!selectMode);
+                    setSelectedIds(new Set());
+                  }
+                }}
+                className="gap-1.5 active-scale"
+              >
+                <FileText className="w-4 h-4" />
+                {selectMode ? (selectedIds.size > 0 ? `PDF (${selectedIds.size})` : 'Cancel') : 'Multi PDF'}
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
