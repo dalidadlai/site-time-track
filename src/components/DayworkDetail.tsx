@@ -76,6 +76,22 @@ export default function DayworkDetail({
   const [planOpen, setPlanOpen] = useState(false);
   const [planHours, setPlanHours] = useState<Record<string, string>>({});
 
+  // Most-used workers first (based on this day's records and plan)
+  const sortedWorkers = useMemo(() => {
+    const usage = new Map<string, number>();
+    daywork.tasks.forEach(t => t.workerLogs.forEach(l => {
+      const k = l.workerId || l.workerName;
+      usage.set(k, (usage.get(k) || 0) + 1);
+    }));
+    plan?.entries.forEach(e => {
+      const k = e.workerId || e.workerName;
+      usage.set(k, (usage.get(k) || 0) + 1);
+    });
+    const use = (w: PredefinedWorker) => usage.get(w.id) ?? usage.get(w.name) ?? 0;
+    return [...workers].sort((a, b) => use(b) - use(a) || a.name.localeCompare(b.name));
+  }, [workers, daywork.tasks, plan]);
+
+
   const openPlanDialog = () => {
     const init: Record<string, string> = {};
     workers.forEach(w => {
