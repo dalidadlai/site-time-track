@@ -21,7 +21,9 @@ function load<T>(key: string, fallback: T): T {
 
 function save(key: string, data: unknown) {
   localStorage.setItem(key, JSON.stringify(data));
+  schedulePush();
 }
+
 
 export const loadProjects = () => load<Project[]>(KEYS.projects, []);
 export const saveProjects = (p: Project[]) => save(KEYS.projects, p);
