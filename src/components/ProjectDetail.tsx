@@ -42,26 +42,9 @@ interface ProjectDetailProps {
   onNavigateToDaywork?: (dayworkId: string) => void;
 }
 
-interface MultiDayWorker {
-  id: string;
-  workerId: string;
-  workerName: string;
-  workerRole: string;
-  totalHours: number;
-}
-
-interface MultiDayTask {
-  id: string;
-  workArea: string;
-  description: string;
-  siteManagerId: string;
-  siteManagerName: string;
-  workers: MultiDayWorker[];
-}
-
 export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onAddDayworkWithTasks, onEditDaywork, onDeleteDaywork, onGeneratePdf, siteManagers, workers, plans, onSavePlan }: ProjectDetailProps) {
   const [open, setOpen] = useState(false);
-  const [selectedDates, setSelectedDates] = useState<Date[]>([new Date()]);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [po, setPo] = useState('');
@@ -84,14 +67,6 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [copyOpen, setCopyOpen] = useState(false);
   const [copyDate, setCopyDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [copySourceId, setCopySourceId] = useState('');
-
-  // Multi-day task creation state
-  const [multiTasks, setMultiTasks] = useState<MultiDayTask[]>([]);
-  const [mtWorkArea, setMtWorkArea] = useState('');
-  const [mtDesc, setMtDesc] = useState('');
-  const [mtSmId, setMtSmId] = useState('');
-  const [mtWorkerOpen, setMtWorkerOpen] = useState<string | null>(null);
-  const [mtSelectedWorkerId, setMtSelectedWorkerId] = useState('');
 
   const [pdfSignedOnly, setPdfSignedOnly] = useState(false);
   const [pdfSmId, setPdfSmId] = useState<string>('');
@@ -291,102 +266,12 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
     setPdfOpen(false);
   };
 
-  const isMultiDay = selectedDates.length > 1;
-
-  const handleAddMultiDayTask = () => {
-    if (!mtDesc.trim()) return;
-    const sm = siteManagers.find(s => s.id === mtSmId);
-    const newTask: MultiDayTask = {
-      id: generateId(),
-      workArea: mtWorkArea.trim(),
-      description: mtDesc.trim(),
-      siteManagerId: mtSmId,
-      siteManagerName: sm?.name || '',
-      workers: [],
-    };
-    setMultiTasks(prev => [...prev, newTask]);
-    setMtWorkArea(''); setMtDesc(''); setMtSmId('');
-  };
-
-  const addWorkerToMultiTask = (taskId: string) => {
-    const w = workers.find(pw => pw.id === mtSelectedWorkerId);
-    if (!w) return;
-    setMultiTasks(prev => prev.map(t => t.id === taskId ? {
-      ...t,
-      workers: [...t.workers, { id: generateId(), workerId: w.id, workerName: w.name, workerRole: w.role, totalHours: 8 }]
-    } : t));
-    setMtSelectedWorkerId(''); setMtWorkerOpen(null);
-  };
-
-  const removeMultiTask = (taskId: string) => {
-    setMultiTasks(prev => prev.filter(t => t.id !== taskId));
-  };
-
-  const updateMultiWorkerHours = (taskId: string, workerId: string, hours: number) => {
-    setMultiTasks(prev => prev.map(t => t.id === taskId ? {
-      ...t,
-      workers: t.workers.map(w => w.id === workerId ? { ...w, totalHours: hours } : w)
-    } : t));
-  };
-
-  const removeMultiWorker = (taskId: string, workerId: string) => {
-    setMultiTasks(prev => prev.map(t => t.id === taskId ? {
-      ...t,
-      workers: t.workers.filter(w => w.id !== workerId)
-    } : t));
-  };
-
   const handleAdd = () => {
-    if (selectedDates.length === 0) return;
-
-    if (isMultiDay && multiTasks.length > 0) {
-      // Create dayworks with tasks and Total Hours mapped to worker logs
-      selectedDates.forEach(d => {
-        const dateStr = format(d, 'yyyy-MM-dd');
-        const dw: DayworkRecord = {
-          id: generateId(),
-          date: dateStr,
-          siteContactName: contactName.trim(),
-          siteContactPhone: contactPhone.trim(),
-          purchaseOrder: po.trim(),
-          tasks: multiTasks.map(mt => ({
-            id: generateId(),
-            workArea: mt.workArea,
-            description: mt.description,
-            siteManagerId: mt.siteManagerId,
-            siteManagerName: mt.siteManagerName,
-            workerLogs: mt.workers.map(w => {
-              // Map total hours to start/finish with 0 break
-              const startHour = 7;
-              const endMinutes = startHour * 60 + Math.round(w.totalHours * 60);
-              const fh = Math.floor(endMinutes / 60);
-              const fm = endMinutes % 60;
-              return {
-                id: generateId(),
-                workerId: w.workerId,
-                workerName: w.workerName,
-                workerRole: w.workerRole,
-                startTime: '07:00',
-                finishTime: `${String(fh).padStart(2, '0')}:${String(fm).padStart(2, '0')}`,
-                breakHours: 0,
-              };
-            }),
-          })),
-        };
-        onAddDayworkWithTasks(dw);
-      });
-      toast({ title: `✓ Created ${selectedDates.length} dayworks with ${multiTasks.length} task${multiTasks.length > 1 ? 's' : ''}` });
-    } else {
-      selectedDates.forEach(d => {
-        const dateStr = format(d, 'yyyy-MM-dd');
-        onAddDaywork({ date: dateStr, siteContactName: contactName.trim(), siteContactPhone: contactPhone.trim(), purchaseOrder: po.trim() });
-      });
-      if (selectedDates.length > 1) {
-        toast({ title: `✓ Created ${selectedDates.length} daywork records` });
-      }
-    }
+    if (!selectedDate) return;
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    onAddDaywork({ date: dateStr, siteContactName: contactName.trim(), siteContactPhone: contactPhone.trim(), purchaseOrder: po.trim() });
     setOpen(false); setContactName(''); setContactPhone(''); setPo('');
-    setSelectedDates([new Date()]); setMultiTasks([]);
+    setSelectedDate(new Date());
   };
 
   const handleCopy = () => {
@@ -808,115 +693,20 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
             <DialogHeader><DialogTitle>New Daywork Record</DialogTitle></DialogHeader>
             <div className="space-y-3 mt-2">
               <div>
-                <Label>Select Dates *</Label>
-                <p className="text-xs text-muted-foreground mb-2">Tap multiple dates to create dayworks for each</p>
+                <Label>Select Date *</Label>
                 <Calendar
-                  mode="multiple"
-                  selected={selectedDates}
-                  onSelect={(dates) => setSelectedDates(dates || [])}
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
                   className="rounded-md border mx-auto pointer-events-auto"
                 />
-                {selectedDates.length > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {selectedDates.length} date{selectedDates.length !== 1 ? 's' : ''} selected
-                  </p>
-                )}
               </div>
               <div><Label>Site Contact Name</Label><Input value={contactName} onChange={e => setContactName(e.target.value)} className="mt-1" /></div>
               <div><Label>Contact Phone</Label><Input value={contactPhone} onChange={e => setContactPhone(e.target.value)} className="mt-1" /></div>
               <div><Label>PO / Contract Ref</Label><Input value={po} onChange={e => setPo(e.target.value)} className="mt-1" /></div>
 
-              {/* Multi-day: add tasks with Total Hours */}
-              {isMultiDay && (
-                <div className="border-t pt-3 space-y-3">
-                  <Label className="text-base font-semibold">Tasks (optional)</Label>
-                  <p className="text-xs text-muted-foreground">Add tasks with workers — only Total Hours needed for multi-day.</p>
-
-                  {/* Existing multi-day tasks */}
-                  {multiTasks.map(mt => (
-                    <div key={mt.id} className="bg-secondary/30 rounded-lg p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          {mt.workArea && <span className="text-xs font-medium text-muted-foreground">{mt.workArea}</span>}
-                          <p className="font-medium text-sm whitespace-pre-line">{mt.description}</p>
-                          {mt.siteManagerName && <p className="text-xs text-muted-foreground">SM: {mt.siteManagerName}</p>}
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                          onClick={() => removeMultiTask(mt.id)}>
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-
-                      {/* Workers with Total Hours */}
-                      {mt.workers.map(w => (
-                        <div key={w.id} className="flex items-center gap-2 bg-background rounded p-2">
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm font-medium">{w.workerName}</span>
-                            {w.workerRole && <span className="text-xs text-muted-foreground ml-1">({w.workerRole})</span>}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Input type="number" step="0.5" min={0} max={24} value={w.totalHours}
-                              onChange={e => updateMultiWorkerHours(mt.id, w.id, parseFloat(e.target.value) || 0)}
-                              className="w-16 h-8 text-sm text-center" />
-                            <span className="text-xs text-muted-foreground">hrs</span>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                              onClick={() => removeMultiWorker(mt.id, w.id)}>
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Add worker to this task */}
-                      {mtWorkerOpen === mt.id ? (
-                        <div className="flex gap-2">
-                          <select
-                            value={mtSelectedWorkerId}
-                            onChange={(e) => setMtSelectedWorkerId(e.target.value)}
-                            className="h-9 flex-1 rounded-md border border-input bg-background px-2 text-sm"
-                          >
-                            <option value="">Choose worker</option>
-                            {sortedWorkers.map(w => (
-                              <option key={w.id} value={w.id}>{w.name}{w.role ? ` (${w.role})` : ''}</option>
-                            ))}
-                          </select>
-                          <Button size="sm" disabled={!mtSelectedWorkerId} onClick={() => addWorkerToMultiTask(mt.id)} className="h-9">Add</Button>
-                        </div>
-                      ) : (
-                        <Button variant="ghost" size="sm" className="w-full text-muted-foreground gap-1"
-                          onClick={() => { setMtWorkerOpen(mt.id); setMtSelectedWorkerId(''); }}>
-                          <UserPlus className="w-3.5 h-3.5" /> Add Worker
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-
-                  {/* Add new task form */}
-                  <div className="border rounded-lg p-3 space-y-2">
-                    <Input value={mtWorkArea} onChange={e => setMtWorkArea(e.target.value)} placeholder="Work area (e.g. Level 1)" className="h-9 text-sm" />
-                    <Textarea value={mtDesc} onChange={e => setMtDesc(e.target.value)} placeholder="Task description" className="text-sm min-h-[60px]" />
-                    <div className="flex justify-end">
-                      <ImproveWithAI value={mtDesc} onChange={setMtDesc} />
-                    </div>
-                    <Select value={mtSmId} onValueChange={setMtSmId}>
-                      <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Site manager" /></SelectTrigger>
-                      <SelectContent>
-                        {siteManagers.map(sm => (
-                          <SelectItem key={sm.id} value={sm.id}>{sm.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button variant="outline" size="sm" className="w-full" disabled={!mtDesc.trim()} onClick={handleAddMultiDayTask}>
-                      <Plus className="w-4 h-4 mr-1" /> Add Task
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              <Button onClick={handleAdd} disabled={selectedDates.length === 0} className="w-full h-12 text-base">
-                {isMultiDay
-                  ? `Create ${selectedDates.length} Dayworks${multiTasks.length > 0 ? ` with ${multiTasks.length} task${multiTasks.length > 1 ? 's' : ''}` : ''}`
-                  : 'Create'}
+              <Button onClick={handleAdd} disabled={!selectedDate} className="w-full h-12 text-base">
+                Create
               </Button>
             </div>
           </DialogContent>
