@@ -28,6 +28,12 @@ export default function SettingsPage({
   onAddWorker, onDeleteWorker, onBack,
 }: SettingsPageProps) {
   const [companyForm, setCompanyForm] = useState(company);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? null));
+  }, []);
+
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
