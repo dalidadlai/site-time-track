@@ -160,6 +160,27 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
     }));
   }, [filteredDays]);
 
+  // Aggregate actual hours per worker across ALL dayworks on the same date
+  const dayActualsByDate = useMemo(() => {
+    const m = new Map<string, Map<string, number>>();
+    project.dayworks.forEach(d => {
+      let dm = m.get(d.date);
+      if (!dm) { dm = new Map<string, number>(); m.set(d.date, dm); }
+      d.tasks.forEach(t => t.workerLogs.forEach(w => {
+        const name = w.workerName || 'Worker';
+        dm!.set(name, (dm!.get(name) || 0) + calculateWorkerHours(w));
+      }));
+    });
+    return m;
+  }, [project.dayworks]);
+
+  // Newest daywork id per date — the plan comparison shows once per day, on that card
+  const firstIdByDate = useMemo(() => {
+    const m = new Map<string, string>();
+    filteredDays.forEach(dw => { if (!m.has(dw.date)) m.set(dw.date, dw.id); });
+    return m;
+  }, [filteredDays]);
+
   const [openMonths, setOpenMonths] = useState<Set<string>>(() => {
     const cached = viewStateCache[project.id];
     if (cached) return new Set(cached.openMonths);
@@ -529,15 +550,14 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                       );
                     })()}
                     {(() => {
+                      // Plan is per person per day — compare against the whole day's total
+                      // across every daywork record on this date, shown once on the newest card.
+                      if (firstIdByDate.get(dw.date) !== dw.id) return null;
                       const plan = planByDate.get(dw.date);
                       if (!plan || plan.entries.length === 0) return null;
-                      const actual = new Map<string, number>();
-                      dw.tasks.forEach(t => t.workerLogs.forEach(w => {
-                        const name = w.workerName || 'Worker';
-                        actual.set(name, (actual.get(name) || 0) + calculateWorkerHours(w));
-                      }));
+                      const actual = dayActualsByDate.get(dw.date);
                       const rows = plan.entries.map(e => {
-                        const a = actual.get(e.workerName) || 0;
+                        const a = actual?.get(e.workerName) || 0;
                         return { name: e.workerName, planned: e.hours, actual: a, diff: a - e.hours };
                       });
                       const mismatches = rows.filter(r => Math.abs(r.diff) > 0.001);
@@ -550,6 +570,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                       }
                       return (
                         <div className="mt-1.5 space-y-0.5">
+                          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Plan vs actual — whole day</p>
                           {mismatches.map(r => (
                             <p key={r.name} className="text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1">
                               <AlertTriangle className="w-3 h-3 shrink-0" />
