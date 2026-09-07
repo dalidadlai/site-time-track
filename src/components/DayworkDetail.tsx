@@ -66,7 +66,7 @@ interface DayworkDetailProps {
 export default function DayworkDetail({
   daywork, projectName, siteManagers, workers, onBack,
   onAddTask, onEditTask, onDeleteTask, onAddWorkerLog, onUpdateWorkerLog, onDeleteWorkerLog,
-  onUpdateSignature, plan, onSavePlan, dayActuals,
+  onUpdateSignature, onCopyTask, plan, onSavePlan, dayActuals,
 }: DayworkDetailProps) {
   const [taskOpen, setTaskOpen] = useState(false);
   const [taskWorkArea, setTaskWorkArea] = useState('');
