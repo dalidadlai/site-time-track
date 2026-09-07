@@ -714,17 +714,26 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
           <DialogHeader><DialogTitle>Plan Hours</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
             <div>
-              <Label>Date *</Label>
-              <Input type="date" value={planDate} onChange={e => e.target.value && handlePlanDateChange(e.target.value)} className="mt-1 h-11" />
+              <Label>Dates *</Label>
+              <p className="text-xs text-muted-foreground mb-2">Tap multiple dates — the same hours are saved for every selected day.</p>
+              <Calendar
+                mode="multiple"
+                selected={planDates}
+                onSelect={(dates) => handlePlanDatesChange(dates || [])}
+                className="rounded-md border mx-auto pointer-events-auto"
+              />
+              {planDates.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">{planDates.length} date{planDates.length !== 1 ? 's' : ''} selected</p>
+              )}
             </div>
             <div>
               <Label>Planned total hours per worker</Label>
-              <p className="text-xs text-muted-foreground mb-2">Leave blank or 0 for workers not on site. Matching compares each worker's total across all tasks that day.</p>
+              <p className="text-xs text-muted-foreground mb-2">Leave blank or 0 for workers not on site. Most-used workers are listed first.</p>
               <div className="space-y-2">
-                {workers.length === 0 && (
+                {sortedWorkers.length === 0 && (
                   <p className="text-sm text-muted-foreground py-2">No workers yet — add workers in Settings first.</p>
                 )}
-                {workers.map(w => (
+                {sortedWorkers.map(w => (
                   <div key={w.id} className="flex items-center gap-2 bg-secondary/30 rounded-lg p-2.5">
                     <div className="flex-1 min-w-0">
                       <span className="text-sm font-medium">{w.name}</span>
@@ -742,9 +751,10 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                 ))}
               </div>
             </div>
-            <Button onClick={handleSavePlan} disabled={!planDate || workers.length === 0} className="w-full h-12 text-base">
-              Save Plan
+            <Button onClick={handleSavePlan} disabled={planDates.length === 0 || sortedWorkers.length === 0} className="w-full h-12 text-base">
+              Save Plan{planDates.length > 1 ? ` for ${planDates.length} days` : ''}
             </Button>
+
           </div>
         </DialogContent>
       </Dialog>
