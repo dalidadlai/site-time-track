@@ -69,6 +69,45 @@ export default function DayworkDetail({
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set(daywork.tasks.map(t => t.id)));
   const [sigOpen, setSigOpen] = useState(false);
 
+  // Plan hours state
+  const [planOpen, setPlanOpen] = useState(false);
+  const [planHours, setPlanHours] = useState<Record<string, string>>({});
+
+  const openPlanDialog = () => {
+    const init: Record<string, string> = {};
+    workers.forEach(w => {
+      const e = plan?.entries.find(en => en.workerId === w.id);
+      init[w.id] = e ? String(e.hours) : '';
+    });
+    setPlanHours(init);
+    setPlanOpen(true);
+  };
+
+  const handleSavePlan = () => {
+    if (!onSavePlan) return;
+    const entries: PlanEntry[] = workers
+      .map(w => ({ workerId: w.id, workerName: w.name, hours: parseFloat(planHours[w.id] || '') || 0 }))
+      .filter(e => e.hours > 0);
+    onSavePlan(daywork.date, entries);
+    setPlanOpen(false);
+    toast({ title: entries.length > 0 ? '✓ Plan saved' : '✓ Plan cleared', description: `${format(new Date(daywork.date + 'T00:00:00'), 'EEE, d MMM yyyy')} · ${entries.length} worker${entries.length !== 1 ? 's' : ''}` });
+  };
+
+  // Plan vs actual comparison
+  const planComparison = (() => {
+    if (!plan || plan.entries.length === 0) return null;
+    const actualByWorker = new Map<string, number>();
+    daywork.tasks.forEach(t => t.workerLogs.forEach(l => {
+      actualByWorker.set(l.workerName, (actualByWorker.get(l.workerName) || 0) + calculateWorkerHours(l));
+    }));
+    const rows = plan.entries.map(e => {
+      const a = actualByWorker.get(e.workerName) || 0;
+      return { name: e.workerName, planned: e.hours, actual: a, diff: a - e.hours };
+    });
+    const allMatch = rows.every(r => Math.abs(r.diff) < 0.001);
+    return { rows, allMatch };
+  })();
+
   // Auto-derive site manager name from tasks
   const derivedSigName = (() => {
     const managers = [...new Set(daywork.tasks.map(t => t.siteManagerName).filter(Boolean))];
