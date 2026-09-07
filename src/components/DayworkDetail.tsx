@@ -78,6 +78,27 @@ export default function DayworkDetail({
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [sigOpen, setSigOpen] = useState(false);
 
+  // Copy single task to another date (three-dot menu or long-press on the task)
+  const [copyTaskId, setCopyTaskId] = useState<string | null>(null);
+  const [copyDate, setCopyDate] = useState<Date | undefined>(undefined);
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelPress = () => { if (pressTimer.current) { clearTimeout(pressTimer.current); pressTimer.current = null; } };
+  const startPress = (taskId: string) => {
+    cancelPress();
+    pressTimer.current = setTimeout(() => {
+      pressTimer.current = null;
+      setCopyTaskId(taskId);
+      setCopyDate(undefined);
+    }, 550);
+  };
+  const handleCopyTask = () => {
+    if (!copyTaskId || !copyDate || !onCopyTask) return;
+    onCopyTask(copyTaskId, format(copyDate, 'yyyy-MM-dd'));
+    setCopyTaskId(null);
+    setCopyDate(undefined);
+    toast({ title: '✓ Task copied', description: `Copied to ${format(copyDate, 'EEE, d MMM yyyy')}` });
+  };
+
   // Plan hours state: tick who is on site; hours auto-fill by weekday
   const [planOpen, setPlanOpen] = useState(false);
   const [planChecked, setPlanChecked] = useState<Record<string, boolean>>({});
