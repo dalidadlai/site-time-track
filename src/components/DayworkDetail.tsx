@@ -68,7 +68,9 @@ export default function DayworkDetail({
   const [taskSmId, setTaskSmId] = useState('');
   const [workerDialogTask, setWorkerDialogTask] = useState<string | null>(null);
   const [selectedWorkerId, setSelectedWorkerId] = useState('');
-  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set(daywork.tasks.map(t => t.id)));
+  // Default to collapsed so days with many tasks stay tidy; tap a task to expand
+  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  const [summaryOpen, setSummaryOpen] = useState(true);
   const [sigOpen, setSigOpen] = useState(false);
 
   // Plan hours state
@@ -205,6 +207,17 @@ export default function DayworkDetail({
 
   const totalHrs = dayworkTotalHours(daywork);
 
+  // Per-worker totals for the day summary (whole day across all records when available)
+  const workerTotals = (() => {
+    if (dayActuals && dayActuals.size > 0) return dayActuals;
+    const m = new Map<string, number>();
+    daywork.tasks.forEach(t => t.workerLogs.forEach(l => {
+      m.set(l.workerName, (m.get(l.workerName) || 0) + calculateWorkerHours(l));
+    }));
+    return m;
+  })();
+  const summaryTotal = [...workerTotals.values()].reduce((s, v) => s + v, 0);
+
   return (
     <div className="min-h-screen pb-24">
       <header className="px-4 pt-6 pb-4">
@@ -259,6 +272,31 @@ export default function DayworkDetail({
           <div className="text-center py-12 animate-fade-in">
             <p className="text-muted-foreground font-medium">No tasks yet</p>
             <p className="text-sm text-muted-foreground mt-1">Add a task to start recording work</p>
+          </div>
+        )}
+
+        {workerTotals.size > 0 && (
+          <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
+            <div className="p-4 flex items-center justify-between cursor-pointer active-scale" onClick={() => setSummaryOpen(o => !o)}>
+              <h3 className="font-semibold">Day Summary</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-primary tabular-nums">{summaryTotal.toFixed(1)}h</span>
+                {summaryOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+              </div>
+            </div>
+            {summaryOpen && (
+              <div className="border-t px-4 py-2">
+                {dayActuals && dayActuals.size > 0 && (
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground pt-1">All records on this date</p>
+                )}
+                {[...workerTotals.entries()].sort((a, b) => b[1] - a[1]).map(([name, hrs]) => (
+                  <div key={name} className="flex items-center justify-between py-1.5 border-b last:border-b-0">
+                    <span className="text-sm font-medium">{name}</span>
+                    <span className="text-sm text-muted-foreground tabular-nums">{hrs.toFixed(1)}h</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
