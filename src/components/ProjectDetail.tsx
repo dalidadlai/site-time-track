@@ -131,38 +131,60 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
     return [...workers].sort((a, b) => use(b) - use(a) || a.name.localeCompare(b.name));
   }, [workers, workerUsage]);
 
-  const loadPlanHoursFor = (dates: Date[]) => {
-    const init: Record<string, string> = {};
+  const loadPlanFor = (dates: Date[]) => {
+    const checked: Record<string, boolean> = {};
+    const hours: Record<string, string> = {};
     if (dates.length === 1) {
       const existing = planByDate.get(format(dates[0], 'yyyy-MM-dd'));
-      existing?.entries.forEach(e => { init[e.workerId] = String(e.hours); });
+      existing?.entries.forEach(e => {
+        if (e.hours > 0) { checked[e.workerId] = true; hours[e.workerId] = String(e.hours); }
+      });
     }
-    setPlanHours(init);
+    setPlanChecked(checked);
+    setPlanHours(hours);
   };
 
   const openPlanDialog = () => {
     const today = [new Date()];
     setPlanDates(today);
-    loadPlanHoursFor(today);
+    loadPlanFor(today);
     setPlanOpen(true);
   };
 
   const handlePlanDatesChange = (dates: Date[]) => {
     setPlanDates(dates);
-    loadPlanHoursFor(dates);
+    loadPlanFor(dates);
+  };
+
+  const togglePlanWorker = (id: string, on: boolean, date: Date) => {
+    setPlanChecked(prev => ({ ...prev, [id]: on }));
+    if (on) {
+      // Pre-fill the weekday default so it can be tweaked inline
+      setPlanHours(prev => ({ ...prev, [id]: String(defaultPlanHours(date)) }));
+    }
   };
 
   const handleSavePlan = () => {
     if (planDates.length === 0) return;
-    const entries: PlanEntry[] = sortedWorkers
-      .map(w => ({ workerId: w.id, workerName: w.name, hours: parseFloat(planHours[w.id] || '') || 0 }))
-      .filter(e => e.hours > 0);
     const dates = [...planDates].sort((a, b) => a.getTime() - b.getTime());
-    dates.forEach(d => onSavePlan(format(d, 'yyyy-MM-dd'), entries));
+    let workerCount = 0;
+    dates.forEach(d => {
+      const def = defaultPlanHours(d);
+      const entries: PlanEntry[] = sortedWorkers
+        .filter(w => planChecked[w.id])
+        .map(w => ({
+          workerId: w.id,
+          workerName: w.name,
+          hours: parseFloat(planHours[w.id] || '') || def,
+        }))
+        .filter(e => e.hours > 0);
+      workerCount = entries.length;
+      onSavePlan(format(d, 'yyyy-MM-dd'), entries);
+    });
     setPlanOpen(false);
     toast({
-      title: entries.length > 0 ? '✓ Plan saved' : '✓ Plan cleared',
-      description: `${dates.length} day${dates.length !== 1 ? 's' : ''} · ${entries.length} worker${entries.length !== 1 ? 's' : ''}`,
+      title: workerCount > 0 ? '✓ Plan saved' : '✓ Plan cleared',
+      description: `${dates.length} day${dates.length !== 1 ? 's' : ''} · ${workerCount} worker${workerCount !== 1 ? 's' : ''}`,
     });
   };
 
