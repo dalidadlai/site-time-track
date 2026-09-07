@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, UserPlus, Clock, ChevronDown, ChevronUp, MapPin, Check, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, UserPlus, Clock, ChevronDown, ChevronUp, MapPin, Check, Pencil, ClipboardList, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ImproveWithAI } from './ImproveWithAI';
 import { Label } from '@/components/ui/label';
-import { DayworkRecord, SiteManager, PredefinedWorker, Task, WorkerLog, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
+import { DayworkRecord, SiteManager, PredefinedWorker, Task, WorkerLog, DayPlan, PlanEntry, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import SignaturePad from '@/components/SignaturePad';
@@ -51,12 +51,14 @@ interface DayworkDetailProps {
   onUpdateWorkerLog: (taskId: string, logId: string, updates: Partial<WorkerLog>) => void;
   onDeleteWorkerLog: (taskId: string, logId: string) => void;
   onUpdateSignature: (data: { signatureData?: string; signatureName?: string; signatureDate?: string }) => void;
+  plan?: DayPlan;
+  onSavePlan?: (date: string, entries: PlanEntry[]) => void;
 }
 
 export default function DayworkDetail({
   daywork, projectName, siteManagers, workers, onBack,
   onAddTask, onEditTask, onDeleteTask, onAddWorkerLog, onUpdateWorkerLog, onDeleteWorkerLog,
-  onUpdateSignature,
+  onUpdateSignature, plan, onSavePlan,
 }: DayworkDetailProps) {
   const [taskOpen, setTaskOpen] = useState(false);
   const [taskWorkArea, setTaskWorkArea] = useState('');
@@ -66,6 +68,45 @@ export default function DayworkDetail({
   const [selectedWorkerId, setSelectedWorkerId] = useState('');
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set(daywork.tasks.map(t => t.id)));
   const [sigOpen, setSigOpen] = useState(false);
+
+  // Plan hours state
+  const [planOpen, setPlanOpen] = useState(false);
+  const [planHours, setPlanHours] = useState<Record<string, string>>({});
+
+  const openPlanDialog = () => {
+    const init: Record<string, string> = {};
+    workers.forEach(w => {
+      const e = plan?.entries.find(en => en.workerId === w.id);
+      init[w.id] = e ? String(e.hours) : '';
+    });
+    setPlanHours(init);
+    setPlanOpen(true);
+  };
+
+  const handleSavePlan = () => {
+    if (!onSavePlan) return;
+    const entries: PlanEntry[] = workers
+      .map(w => ({ workerId: w.id, workerName: w.name, hours: parseFloat(planHours[w.id] || '') || 0 }))
+      .filter(e => e.hours > 0);
+    onSavePlan(daywork.date, entries);
+    setPlanOpen(false);
+    toast({ title: entries.length > 0 ? '✓ Plan saved' : '✓ Plan cleared', description: `${format(new Date(daywork.date + 'T00:00:00'), 'EEE, d MMM yyyy')} · ${entries.length} worker${entries.length !== 1 ? 's' : ''}` });
+  };
+
+  // Plan vs actual comparison
+  const planComparison = (() => {
+    if (!plan || plan.entries.length === 0) return null;
+    const actualByWorker = new Map<string, number>();
+    daywork.tasks.forEach(t => t.workerLogs.forEach(l => {
+      actualByWorker.set(l.workerName, (actualByWorker.get(l.workerName) || 0) + calculateWorkerHours(l));
+    }));
+    const rows = plan.entries.map(e => {
+      const a = actualByWorker.get(e.workerName) || 0;
+      return { name: e.workerName, planned: e.hours, actual: a, diff: a - e.hours };
+    });
+    const allMatch = rows.every(r => Math.abs(r.diff) < 0.001);
+    return { rows, allMatch };
+  })();
 
   // Auto-derive site manager name from tasks
   const derivedSigName = (() => {
@@ -176,7 +217,26 @@ export default function DayworkDetail({
               ✓ Signed
             </span>
           )}
+          {onSavePlan && (
+            <Button variant="outline" size="sm" onClick={openPlanDialog} className="gap-1.5 h-7 text-xs active-scale">
+              <ClipboardList className="w-3.5 h-3.5" /> Plan Hours
+            </Button>
+          )}
         </div>
+        {planComparison && (
+          <div className="mt-2 space-y-1">
+            {planComparison.allMatch ? (
+              <span className="inline-flex items-center text-[11px] font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-md">✓ Matches plan</span>
+            ) : (
+              planComparison.rows.filter(r => Math.abs(r.diff) >= 0.001).map(r => (
+                <p key={r.name} className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
+                  <AlertTriangle className="w-3 h-3" />
+                  {r.name}: planned {r.planned}h / actual {r.actual.toFixed(1)}h ({r.diff > 0 ? '+' : ''}{r.diff.toFixed(1)}h)
+                </p>
+              ))
+            )}
+          </div>
+        )}
         {daywork.siteContactName && (
           <p className="text-sm text-muted-foreground mt-1">Contact: {daywork.siteContactName}{daywork.siteContactPhone ? ` · ${daywork.siteContactPhone}` : ''}</p>
         )}
@@ -457,6 +517,36 @@ export default function DayworkDetail({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Plan Hours Dialog */}
+      <Dialog open={planOpen} onOpenChange={setPlanOpen}>
+        <DialogContent className="mx-4 max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Plan Hours — {format(new Date(daywork.date + 'T00:00:00'), 'EEE, d MMM yyyy')}</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            {workers.length === 0 && (
+              <p className="text-sm text-muted-foreground">Add workers in Settings first.</p>
+            )}
+            {workers.map(w => (
+              <div key={w.id} className="flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{w.name}</p>
+                  {w.role && <p className="text-xs text-muted-foreground">{w.role}</p>}
+                </div>
+                <Input
+                  type="number" inputMode="decimal" step="0.5" min="0" placeholder="0"
+                  value={planHours[w.id] || ''}
+                  onChange={e => setPlanHours(prev => ({ ...prev, [w.id]: e.target.value }))}
+                  className="w-24 text-right"
+                />
+                <span className="text-sm text-muted-foreground">h</span>
+              </div>
+            ))}
+            <Button onClick={handleSavePlan} className="w-full h-12 text-base gap-2">
+              <Check className="w-5 h-5" /> Save Plan
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

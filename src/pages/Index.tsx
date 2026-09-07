@@ -108,6 +108,8 @@ const Index = () => {
         projectName={project.name}
         siteManagers={siteManagers}
         workers={workers}
+        plan={plans.find(p => p.projectId === project.id && p.date === dw.date)}
+        onSavePlan={(date, entries) => savePlan(project.id, date, entries)}
         onBack={() => setView({ screen: 'project', projectId: project.id })}
         onAddTask={(task) => addTask(project.id, dw.id, task)}
         onEditTask={(taskId, updates) => updateTask(project.id, dw.id, taskId, updates)}
