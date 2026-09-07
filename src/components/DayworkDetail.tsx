@@ -329,6 +329,7 @@ export default function DayworkDetail({
                 onClick={() => toggleTask(task.id)}
                 onPointerDown={() => onCopyTask && startPress(task.id)}
                 onPointerUp={cancelPress}
+                onPointerCancel={cancelPress}
                 onPointerLeave={cancelPress}
                 onPointerMove={cancelPress}
                 onContextMenu={(e) => { if (onCopyTask) { e.preventDefault(); setCopyTaskId(task.id); setCopyDate(undefined); } }}
