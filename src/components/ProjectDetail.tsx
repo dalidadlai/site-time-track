@@ -731,16 +731,16 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
           <DialogHeader><DialogTitle>Plan Hours</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
             <div>
-              <Label>Dates *</Label>
-              <p className="text-xs text-muted-foreground mb-2">Tap multiple dates — the same hours are saved for every selected day.</p>
+              <Label>Date *</Label>
+              <p className="text-xs text-muted-foreground mb-2">Select one day to plan.</p>
               <Calendar
-                mode="multiple"
-                selected={planDates}
-                onSelect={(dates) => handlePlanDatesChange(dates || [])}
+                mode="single"
+                selected={planDate}
+                onSelect={handlePlanDateChange}
                 className="rounded-md border mx-auto pointer-events-auto"
               />
-              {planDates.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-1">{planDates.length} date{planDates.length !== 1 ? 's' : ''} selected</p>
+              {planDate && (
+                <p className="text-xs text-muted-foreground mt-1">{format(planDate, 'EEE, d MMM yyyy')}</p>
               )}
             </div>
             <div>
@@ -759,7 +759,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                       <Checkbox
                         id={`plan-${w.id}`}
                         checked={on}
-                        onCheckedChange={(c) => togglePlanWorker(w.id, c === true, planDates[0] ?? new Date())}
+                        onCheckedChange={(c) => togglePlanWorker(w.id, c === true, planDate ?? new Date())}
                         className="w-5 h-5"
                       />
                       <label htmlFor={`plan-${w.id}`} className="flex-1 min-w-0 cursor-pointer">
@@ -782,8 +782,8 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                 })}
               </div>
             </div>
-            <Button onClick={handleSavePlan} disabled={planDates.length === 0 || sortedWorkers.length === 0} className="w-full h-12 text-base">
-              Save Plan{planDates.length > 1 ? ` for ${planDates.length} days` : ''}
+            <Button onClick={handleSavePlan} disabled={!planDate || sortedWorkers.length === 0} className="w-full h-12 text-base">
+              Save Plan
             </Button>
 
           </div>
