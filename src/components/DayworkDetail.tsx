@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ArrowLeft, Plus, Trash2, UserPlus, Clock, ChevronDown, ChevronUp, MapPin, Check, Pencil, ClipboardList, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -483,7 +483,7 @@ export default function DayworkDetail({
                 className="mt-1 h-11 w-full rounded-md border border-input bg-background px-3 text-base"
               >
                 <option value="">Choose worker</option>
-                {workers.map(w => (
+                {sortedWorkers.map(w => (
                   <option key={w.id} value={w.id}>{w.name}{w.role ? ` (${w.role})` : ''}</option>
                 ))}
               </select>
@@ -552,7 +552,7 @@ export default function DayworkDetail({
             {workers.length === 0 && (
               <p className="text-sm text-muted-foreground">Add workers in Settings first.</p>
             )}
-            {workers.map(w => (
+            {sortedWorkers.map(w => (
               <div key={w.id} className="flex items-center gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{w.name}</p>
