@@ -275,6 +275,31 @@ export default function DayworkDetail({
           </div>
         )}
 
+        {workerTotals.size > 0 && (
+          <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
+            <div className="p-4 flex items-center justify-between cursor-pointer active-scale" onClick={() => setSummaryOpen(o => !o)}>
+              <h3 className="font-semibold">Day Summary</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-primary tabular-nums">{summaryTotal.toFixed(1)}h</span>
+                {summaryOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+              </div>
+            </div>
+            {summaryOpen && (
+              <div className="border-t px-4 py-2">
+                {dayActuals && dayActuals.size > 0 && (
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground pt-1">All records on this date</p>
+                )}
+                {[...workerTotals.entries()].sort((a, b) => b[1] - a[1]).map(([name, hrs]) => (
+                  <div key={name} className="flex items-center justify-between py-1.5 border-b last:border-b-0">
+                    <span className="text-sm font-medium">{name}</span>
+                    <span className="text-sm text-muted-foreground tabular-nums">{hrs.toFixed(1)}h</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {daywork.tasks.map((task, i) => {
           const isExpanded = expandedTasks.has(task.id);
           const tHrs = taskTotalHours(task);
