@@ -101,7 +101,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   // Planned hours state: check who is on site; hours auto-fill by weekday
   // (Mon–Thu 9.5, Fri 8.5, Sat 6) and can be overridden per worker.
   const [planOpen, setPlanOpen] = useState(false);
-  const [planDates, setPlanDates] = useState<Date[]>([new Date()]);
+  const [planDate, setPlanDate] = useState<Date | undefined>(new Date());
   const [planChecked, setPlanChecked] = useState<Record<string, boolean>>({});
   const [planHours, setPlanHours] = useState<Record<string, string>>({});
 
@@ -131,29 +131,27 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
     return [...workers].sort((a, b) => use(b) - use(a) || a.name.localeCompare(b.name));
   }, [workers, workerUsage]);
 
-  const loadPlanFor = (dates: Date[]) => {
+  const loadPlanFor = (date: Date) => {
     const checked: Record<string, boolean> = {};
     const hours: Record<string, string> = {};
-    if (dates.length === 1) {
-      const existing = planByDate.get(format(dates[0], 'yyyy-MM-dd'));
-      existing?.entries.forEach(e => {
-        if (e.hours > 0) { checked[e.workerId] = true; hours[e.workerId] = String(e.hours); }
-      });
-    }
+    const existing = planByDate.get(format(date, 'yyyy-MM-dd'));
+    existing?.entries.forEach(e => {
+      if (e.hours > 0) { checked[e.workerId] = true; hours[e.workerId] = String(e.hours); }
+    });
     setPlanChecked(checked);
     setPlanHours(hours);
   };
 
   const openPlanDialog = () => {
-    const today = [new Date()];
-    setPlanDates(today);
+    const today = new Date();
+    setPlanDate(today);
     loadPlanFor(today);
     setPlanOpen(true);
   };
 
-  const handlePlanDatesChange = (dates: Date[]) => {
-    setPlanDates(dates);
-    loadPlanFor(dates);
+  const handlePlanDateChange = (date: Date | undefined) => {
+    setPlanDate(date);
+    if (date) loadPlanFor(date);
   };
 
   const togglePlanWorker = (id: string, on: boolean, date: Date) => {
@@ -165,26 +163,21 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   };
 
   const handleSavePlan = () => {
-    if (planDates.length === 0) return;
-    const dates = [...planDates].sort((a, b) => a.getTime() - b.getTime());
-    let workerCount = 0;
-    dates.forEach(d => {
-      const def = defaultPlanHours(d);
-      const entries: PlanEntry[] = sortedWorkers
-        .filter(w => planChecked[w.id])
-        .map(w => ({
-          workerId: w.id,
-          workerName: w.name,
-          hours: parseFloat(planHours[w.id] || '') || def,
-        }))
-        .filter(e => e.hours > 0);
-      workerCount = entries.length;
-      onSavePlan(format(d, 'yyyy-MM-dd'), entries);
-    });
+    if (!planDate) return;
+    const def = defaultPlanHours(planDate);
+    const entries: PlanEntry[] = sortedWorkers
+      .filter(w => planChecked[w.id])
+      .map(w => ({
+        workerId: w.id,
+        workerName: w.name,
+        hours: parseFloat(planHours[w.id] || '') || def,
+      }))
+      .filter(e => e.hours > 0);
+    onSavePlan(format(planDate, 'yyyy-MM-dd'), entries);
     setPlanOpen(false);
     toast({
-      title: workerCount > 0 ? '✓ Plan saved' : '✓ Plan cleared',
-      description: `${dates.length} day${dates.length !== 1 ? 's' : ''} · ${workerCount} worker${workerCount !== 1 ? 's' : ''}`,
+      title: entries.length > 0 ? '✓ Plan saved' : '✓ Plan cleared',
+      description: `${format(planDate, 'EEE, d MMM yyyy')} · ${entries.length} worker${entries.length !== 1 ? 's' : ''}`,
     });
   };
 
