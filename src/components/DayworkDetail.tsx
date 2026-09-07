@@ -53,12 +53,14 @@ interface DayworkDetailProps {
   onUpdateSignature: (data: { signatureData?: string; signatureName?: string; signatureDate?: string }) => void;
   plan?: DayPlan;
   onSavePlan?: (date: string, entries: PlanEntry[]) => void;
+  // Actual hours per worker aggregated across ALL dayworks on this date (plan is per day, not per record)
+  dayActuals?: Map<string, number>;
 }
 
 export default function DayworkDetail({
   daywork, projectName, siteManagers, workers, onBack,
   onAddTask, onEditTask, onDeleteTask, onAddWorkerLog, onUpdateWorkerLog, onDeleteWorkerLog,
-  onUpdateSignature, plan, onSavePlan,
+  onUpdateSignature, plan, onSavePlan, dayActuals,
 }: DayworkDetailProps) {
   const [taskOpen, setTaskOpen] = useState(false);
   const [taskWorkArea, setTaskWorkArea] = useState('');
@@ -96,10 +98,14 @@ export default function DayworkDetail({
   // Plan vs actual comparison
   const planComparison = (() => {
     if (!plan || plan.entries.length === 0) return null;
-    const actualByWorker = new Map<string, number>();
-    daywork.tasks.forEach(t => t.workerLogs.forEach(l => {
-      actualByWorker.set(l.workerName, (actualByWorker.get(l.workerName) || 0) + calculateWorkerHours(l));
-    }));
+    // Use the whole-day totals (all dayworks on this date) when provided
+    const actualByWorker = dayActuals ?? (() => {
+      const m = new Map<string, number>();
+      daywork.tasks.forEach(t => t.workerLogs.forEach(l => {
+        m.set(l.workerName, (m.get(l.workerName) || 0) + calculateWorkerHours(l));
+      }));
+      return m;
+    })();
     const rows = plan.entries.map(e => {
       const a = actualByWorker.get(e.workerName) || 0;
       return { name: e.workerName, planned: e.hours, actual: a, diff: a - e.hours };
