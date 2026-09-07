@@ -361,9 +361,6 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
         workerLogs: t.workerLogs.map(w => ({
           ...w,
           id: generateId(),
-          startTime: '',
-          finishTime: '',
-          breakHours: 0.5,
         })),
       })),
     };
