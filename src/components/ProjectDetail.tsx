@@ -845,7 +845,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                             className="h-9 flex-1 rounded-md border border-input bg-background px-2 text-sm"
                           >
                             <option value="">Choose worker</option>
-                            {workers.map(w => (
+                            {sortedWorkers.map(w => (
                               <option key={w.id} value={w.id}>{w.name}{w.role ? ` (${w.role})` : ''}</option>
                             ))}
                           </select>
