@@ -207,6 +207,17 @@ export default function DayworkDetail({
 
   const totalHrs = dayworkTotalHours(daywork);
 
+  // Per-worker totals for the day summary (whole day across all records when available)
+  const workerTotals = (() => {
+    if (dayActuals && dayActuals.size > 0) return dayActuals;
+    const m = new Map<string, number>();
+    daywork.tasks.forEach(t => t.workerLogs.forEach(l => {
+      m.set(l.workerName, (m.get(l.workerName) || 0) + calculateWorkerHours(l));
+    }));
+    return m;
+  })();
+  const summaryTotal = [...workerTotals.values()].reduce((s, v) => s + v, 0);
+
   return (
     <div className="min-h-screen pb-24">
       <header className="px-4 pt-6 pb-4">
