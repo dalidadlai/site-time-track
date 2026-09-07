@@ -68,8 +68,6 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [copyDate, setCopyDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [copySourceId, setCopySourceId] = useState('');
 
-  // Multi-day task creation state
-  const [multiTasks, setMultiTasks] = useState<MultiDayTask[]>([]);
   const [mtWorkArea, setMtWorkArea] = useState('');
   const [mtDesc, setMtDesc] = useState('');
   const [mtSmId, setMtSmId] = useState('');
