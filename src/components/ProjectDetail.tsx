@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Project, DayworkRecord, SiteManager, PredefinedWorker, DayPlan, PlanEntry, dayworkTotalHours, calculateWorkerHours, generateId } from '@/lib/types';
+import { Project, DayworkRecord, SiteManager, PredefinedWorker, DayPlan, PlanEntry, dayworkTotalHours, calculateWorkerHours, generateId, defaultPlanHours } from '@/lib/types';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { ImproveWithAI } from './ImproveWithAI';
@@ -98,9 +98,11 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [filterSmId, setFilterSmId] = useState<string>('');
   const [pdfMode, setPdfMode] = useState<'report' | 'jobsheet'>('report');
 
-  // Planned hours state
+  // Planned hours state: check who is on site; hours auto-fill by weekday
+  // (Mon–Thu 9.5, Fri 8.5, Sat 6) and can be overridden per worker.
   const [planOpen, setPlanOpen] = useState(false);
   const [planDates, setPlanDates] = useState<Date[]>([new Date()]);
+  const [planChecked, setPlanChecked] = useState<Record<string, boolean>>({});
   const [planHours, setPlanHours] = useState<Record<string, string>>({});
 
   const projectPlans = useMemo(() => plans.filter(p => p.projectId === project.id), [plans, project.id]);
@@ -129,38 +131,60 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
     return [...workers].sort((a, b) => use(b) - use(a) || a.name.localeCompare(b.name));
   }, [workers, workerUsage]);
 
-  const loadPlanHoursFor = (dates: Date[]) => {
-    const init: Record<string, string> = {};
+  const loadPlanFor = (dates: Date[]) => {
+    const checked: Record<string, boolean> = {};
+    const hours: Record<string, string> = {};
     if (dates.length === 1) {
       const existing = planByDate.get(format(dates[0], 'yyyy-MM-dd'));
-      existing?.entries.forEach(e => { init[e.workerId] = String(e.hours); });
+      existing?.entries.forEach(e => {
+        if (e.hours > 0) { checked[e.workerId] = true; hours[e.workerId] = String(e.hours); }
+      });
     }
-    setPlanHours(init);
+    setPlanChecked(checked);
+    setPlanHours(hours);
   };
 
   const openPlanDialog = () => {
     const today = [new Date()];
     setPlanDates(today);
-    loadPlanHoursFor(today);
+    loadPlanFor(today);
     setPlanOpen(true);
   };
 
   const handlePlanDatesChange = (dates: Date[]) => {
     setPlanDates(dates);
-    loadPlanHoursFor(dates);
+    loadPlanFor(dates);
+  };
+
+  const togglePlanWorker = (id: string, on: boolean, date: Date) => {
+    setPlanChecked(prev => ({ ...prev, [id]: on }));
+    if (on) {
+      // Pre-fill the weekday default so it can be tweaked inline
+      setPlanHours(prev => ({ ...prev, [id]: String(defaultPlanHours(date)) }));
+    }
   };
 
   const handleSavePlan = () => {
     if (planDates.length === 0) return;
-    const entries: PlanEntry[] = sortedWorkers
-      .map(w => ({ workerId: w.id, workerName: w.name, hours: parseFloat(planHours[w.id] || '') || 0 }))
-      .filter(e => e.hours > 0);
     const dates = [...planDates].sort((a, b) => a.getTime() - b.getTime());
-    dates.forEach(d => onSavePlan(format(d, 'yyyy-MM-dd'), entries));
+    let workerCount = 0;
+    dates.forEach(d => {
+      const def = defaultPlanHours(d);
+      const entries: PlanEntry[] = sortedWorkers
+        .filter(w => planChecked[w.id])
+        .map(w => ({
+          workerId: w.id,
+          workerName: w.name,
+          hours: parseFloat(planHours[w.id] || '') || def,
+        }))
+        .filter(e => e.hours > 0);
+      workerCount = entries.length;
+      onSavePlan(format(d, 'yyyy-MM-dd'), entries);
+    });
     setPlanOpen(false);
     toast({
-      title: entries.length > 0 ? '✓ Plan saved' : '✓ Plan cleared',
-      description: `${dates.length} day${dates.length !== 1 ? 's' : ''} · ${entries.length} worker${entries.length !== 1 ? 's' : ''}`,
+      title: workerCount > 0 ? '✓ Plan saved' : '✓ Plan cleared',
+      description: `${dates.length} day${dates.length !== 1 ? 's' : ''} · ${workerCount} worker${workerCount !== 1 ? 's' : ''}`,
     });
   };
 
@@ -727,28 +751,42 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
               )}
             </div>
             <div>
-              <Label>Planned total hours per worker</Label>
-              <p className="text-xs text-muted-foreground mb-2">Leave blank or 0 for workers not on site. Most-used workers are listed first.</p>
+              <Label>Who is on site?</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Tick the workers coming in — hours fill in automatically (Mon–Thu 9.5h · Fri 8.5h · Sat 6h). Tap a number to change it.
+              </p>
               <div className="space-y-2">
                 {sortedWorkers.length === 0 && (
                   <p className="text-sm text-muted-foreground py-2">No workers yet — add workers in Settings first.</p>
                 )}
-                {sortedWorkers.map(w => (
-                  <div key={w.id} className="flex items-center gap-2 bg-secondary/30 rounded-lg p-2.5">
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium">{w.name}</span>
-                      {w.role && <span className="text-xs text-muted-foreground ml-1">({w.role})</span>}
+                {sortedWorkers.map(w => {
+                  const on = !!planChecked[w.id];
+                  return (
+                    <div key={w.id} className={`flex items-center gap-2 rounded-lg p-2.5 ${on ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/30'}`}>
+                      <Checkbox
+                        id={`plan-${w.id}`}
+                        checked={on}
+                        onCheckedChange={(c) => togglePlanWorker(w.id, c === true, planDates[0] ?? new Date())}
+                        className="w-5 h-5"
+                      />
+                      <label htmlFor={`plan-${w.id}`} className="flex-1 min-w-0 cursor-pointer">
+                        <span className="text-sm font-medium">{w.name}</span>
+                        {w.role && <span className="text-xs text-muted-foreground ml-1">({w.role})</span>}
+                      </label>
+                      {on && (
+                        <>
+                          <Input
+                            type="number" step="0.5" min={0} max={24}
+                            value={planHours[w.id] ?? ''}
+                            onChange={e => setPlanHours(prev => ({ ...prev, [w.id]: e.target.value }))}
+                            className="w-20 h-9 text-sm text-center"
+                          />
+                          <span className="text-xs text-muted-foreground">hrs</span>
+                        </>
+                      )}
                     </div>
-                    <Input
-                      type="number" step="0.5" min={0} max={24}
-                      value={planHours[w.id] ?? ''}
-                      placeholder="0"
-                      onChange={e => setPlanHours(prev => ({ ...prev, [w.id]: e.target.value }))}
-                      className="w-20 h-9 text-sm text-center"
-                    />
-                    <span className="text-xs text-muted-foreground">hrs</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
             <Button onClick={handleSavePlan} disabled={planDates.length === 0 || sortedWorkers.length === 0} className="w-full h-12 text-base">
