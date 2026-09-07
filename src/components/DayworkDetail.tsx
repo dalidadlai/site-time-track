@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, UserPlus, Clock, ChevronDown, ChevronUp, MapPin, Check, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, UserPlus, Clock, ChevronDown, ChevronUp, MapPin, Check, Pencil, ClipboardList, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ImproveWithAI } from './ImproveWithAI';
 import { Label } from '@/components/ui/label';
-import { DayworkRecord, SiteManager, PredefinedWorker, Task, WorkerLog, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
+import { DayworkRecord, SiteManager, PredefinedWorker, Task, WorkerLog, DayPlan, PlanEntry, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import SignaturePad from '@/components/SignaturePad';
@@ -51,12 +51,14 @@ interface DayworkDetailProps {
   onUpdateWorkerLog: (taskId: string, logId: string, updates: Partial<WorkerLog>) => void;
   onDeleteWorkerLog: (taskId: string, logId: string) => void;
   onUpdateSignature: (data: { signatureData?: string; signatureName?: string; signatureDate?: string }) => void;
+  plan?: DayPlan;
+  onSavePlan?: (date: string, entries: PlanEntry[]) => void;
 }
 
 export default function DayworkDetail({
   daywork, projectName, siteManagers, workers, onBack,
   onAddTask, onEditTask, onDeleteTask, onAddWorkerLog, onUpdateWorkerLog, onDeleteWorkerLog,
-  onUpdateSignature,
+  onUpdateSignature, plan, onSavePlan,
 }: DayworkDetailProps) {
   const [taskOpen, setTaskOpen] = useState(false);
   const [taskWorkArea, setTaskWorkArea] = useState('');
