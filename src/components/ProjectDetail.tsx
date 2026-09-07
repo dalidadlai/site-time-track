@@ -662,6 +662,47 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
         </div>
       )}
 
+      {/* Plan Hours Dialog */}
+      <Dialog open={planOpen} onOpenChange={setPlanOpen}>
+        <DialogContent className="mx-4 max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Plan Hours</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div>
+              <Label>Date *</Label>
+              <Input type="date" value={planDate} onChange={e => e.target.value && handlePlanDateChange(e.target.value)} className="mt-1 h-11" />
+            </div>
+            <div>
+              <Label>Planned total hours per worker</Label>
+              <p className="text-xs text-muted-foreground mb-2">Leave blank or 0 for workers not on site. Matching compares each worker's total across all tasks that day.</p>
+              <div className="space-y-2">
+                {workers.length === 0 && (
+                  <p className="text-sm text-muted-foreground py-2">No workers yet — add workers in Settings first.</p>
+                )}
+                {workers.map(w => (
+                  <div key={w.id} className="flex items-center gap-2 bg-secondary/30 rounded-lg p-2.5">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium">{w.name}</span>
+                      {w.role && <span className="text-xs text-muted-foreground ml-1">({w.role})</span>}
+                    </div>
+                    <Input
+                      type="number" step="0.5" min={0} max={24}
+                      value={planHours[w.id] ?? ''}
+                      placeholder="0"
+                      onChange={e => setPlanHours(prev => ({ ...prev, [w.id]: e.target.value }))}
+                      className="w-20 h-9 text-sm text-center"
+                    />
+                    <span className="text-xs text-muted-foreground">hrs</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <Button onClick={handleSavePlan} disabled={!planDate || workers.length === 0} className="w-full h-12 text-base">
+              Save Plan
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Add Daywork FAB */}
       <div className="fixed bottom-6 right-4 left-4 flex justify-end gap-2">
         {sortedDays.length > 0 && (
