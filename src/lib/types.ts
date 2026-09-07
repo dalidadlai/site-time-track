@@ -71,6 +71,15 @@ export interface DayPlan {
   entries: PlanEntry[];
 }
 
+/** Default planned hours by weekday: Mon–Thu 9.5, Fri 8.5, Sat 6, Sun 0. */
+export function defaultPlanHours(date: Date): number {
+  const d = date.getDay();
+  if (d === 0) return 0;
+  if (d === 6) return 6;
+  if (d === 5) return 8.5;
+  return 9.5;
+}
+
 export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
