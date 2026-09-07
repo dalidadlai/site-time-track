@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ImproveWithAI } from './ImproveWithAI';
 import { Label } from '@/components/ui/label';
-import { DayworkRecord, SiteManager, PredefinedWorker, Task, WorkerLog, DayPlan, PlanEntry, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DayworkRecord, SiteManager, PredefinedWorker, Task, WorkerLog, DayPlan, PlanEntry, calculateWorkerHours, taskTotalHours, dayworkTotalHours, defaultPlanHours } from '@/lib/types';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import SignaturePad from '@/components/SignaturePad';
@@ -72,8 +73,9 @@ export default function DayworkDetail({
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [sigOpen, setSigOpen] = useState(false);
 
-  // Plan hours state
+  // Plan hours state: tick who is on site; hours auto-fill by weekday
   const [planOpen, setPlanOpen] = useState(false);
+  const [planChecked, setPlanChecked] = useState<Record<string, boolean>>({});
   const [planHours, setPlanHours] = useState<Record<string, string>>({});
 
   // Most-used workers first (based on this day's records and plan)
