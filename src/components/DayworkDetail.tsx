@@ -66,7 +66,7 @@ interface DayworkDetailProps {
 export default function DayworkDetail({
   daywork, projectName, siteManagers, workers, onBack,
   onAddTask, onEditTask, onDeleteTask, onAddWorkerLog, onAddWorkerLogs, onUpdateWorkerLog, onDeleteWorkerLog,
-  onUpdateSignature, onCopyTask, plan, onSavePlan, dayActuals,
+  onUpdateSignature, onCopyTask, plan, prevPlan, onSavePlan, dayActuals,
 }: DayworkDetailProps) {
   const [taskOpen, setTaskOpen] = useState(false);
   const [taskWorkArea, setTaskWorkArea] = useState('');
@@ -125,9 +125,17 @@ export default function DayworkDetail({
   const openPlanDialog = () => {
     const checked: Record<string, boolean> = {};
     const init: Record<string, string> = {};
+    const def = defaultPlanHours(planDateObj);
+    const source = plan && plan.entries.length > 0 ? plan : undefined;
     workers.forEach(w => {
-      const e = plan?.entries.find(en => en.workerId === w.id);
-      if (e && e.hours > 0) { checked[w.id] = true; init[w.id] = String(e.hours); }
+      if (source) {
+        const e = source.entries.find(en => en.workerId === w.id);
+        if (e && e.hours > 0) { checked[w.id] = true; init[w.id] = String(e.hours); }
+      } else if (def > 0) {
+        // Carry over the previous day's crew; hours use this weekday's default
+        const e = prevPlan?.entries.find(en => en.workerId === w.id);
+        if (e && e.hours > 0) { checked[w.id] = true; init[w.id] = String(def); }
+      }
     });
     setPlanChecked(checked);
     setPlanHours(init);
