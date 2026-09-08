@@ -21,7 +21,7 @@ const Index = () => {
     projects, addProject, updateProject, deleteProject,
     addDaywork, addDayworkWithTasks, updateDaywork, deleteDaywork,
     addTask, updateTask, deleteTask, copyTaskToDate,
-    addWorkerLog, updateWorkerLog, deleteWorkerLog,
+    addWorkerLog, addWorkerLogs, updateWorkerLog, deleteWorkerLog,
   } = useProjects();
 
   const {
@@ -126,6 +126,7 @@ const Index = () => {
         onDeleteTask={(taskId) => deleteTask(project.id, dw.id, taskId)}
         onCopyTask={(taskId, date) => copyTaskToDate(project.id, dw.id, taskId, date)}
         onAddWorkerLog={(taskId, log) => addWorkerLog(project.id, dw.id, taskId, log)}
+        onAddWorkerLogs={(taskId, logs) => addWorkerLogs(project.id, dw.id, taskId, logs)}
         onUpdateWorkerLog={(taskId, logId, updates) => updateWorkerLog(project.id, dw.id, taskId, logId, updates)}
         onDeleteWorkerLog={(taskId, logId) => deleteWorkerLog(project.id, dw.id, taskId, logId)}
         onUpdateSignature={(data) => updateDaywork(project.id, dw.id, data)}
