@@ -690,7 +690,14 @@ export default function DayworkDetail({
             {sortedWorkers.map(w => {
               const on = !!planChecked[w.id];
               return (
-                <div key={w.id} className={`flex items-center gap-3 rounded-lg p-2 ${on ? 'bg-primary/10 border border-primary/30' : ''}`}>
+                <div
+                  key={w.id}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest('input[type="number"]')) return;
+                    togglePlanWorker(w.id, !on);
+                  }}
+                  className={`flex items-center gap-3 rounded-lg p-2 cursor-pointer select-none ${on ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/30'}`}
+                >
                   <Checkbox
                     id={`dplan-${w.id}`}
                     checked={on}

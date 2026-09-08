@@ -650,7 +650,14 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                 {sortedWorkers.map(w => {
                   const on = !!planChecked[w.id];
                   return (
-                    <div key={w.id} className={`flex items-center gap-2 rounded-lg p-2.5 ${on ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/30'}`}>
+                    <div
+                      key={w.id}
+                      onClick={(e) => {
+                        if ((e.target as HTMLElement).closest('input[type="number"]')) return;
+                        togglePlanWorker(w.id, !on, planDate ?? new Date());
+                      }}
+                      className={`flex items-center gap-2 rounded-lg p-2.5 cursor-pointer select-none ${on ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/30'}`}
+                    >
                       <Checkbox
                         id={`plan-${w.id}`}
                         checked={on}
