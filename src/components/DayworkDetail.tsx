@@ -229,20 +229,21 @@ export default function DayworkDetail({
 
   const handleAddSelectedWorkers = () => {
     if (!workerDialogTask || selectedWorkerIds.size === 0) return;
-    selectedWorkerIds.forEach(id => {
-      const w = workers.find(pw => pw.id === id);
-      if (!w) return;
-      onAddWorkerLog(workerDialogTask, {
+    const logs = Array.from(selectedWorkerIds)
+      .map(id => workers.find(pw => pw.id === id))
+      .filter((w): w is NonNullable<typeof w> => !!w)
+      .map(w => ({
         workerId: w.id,
         workerName: w.name,
         workerRole: w.role,
         startTime: '07:00',
         finishTime: '17:00',
         breakHours: 0.5,
-      });
-    });
+      }));
+    onAddWorkerLogs(workerDialogTask, logs);
+    const count = logs.length;
     setSelectedWorkerIds(new Set()); setWorkerDialogTask(null);
-    toast({ title: '✓ Workers added', description: `${selectedWorkerIds.size} worker${selectedWorkerIds.size !== 1 ? 's' : ''} added to the task.` });
+    toast({ title: '✓ Workers added', description: `${count} worker${count !== 1 ? 's' : ''} added to the task.` });
   };
 
   const handleSign = (signatureDataUrl: string) => {
