@@ -76,6 +76,15 @@ export function useProjects() {
     } : p));
   }, [projects, persist]);
 
+  const addWorkerLogs = useCallback((projectId: string, dayworkId: string, taskId: string, logs: Omit<WorkerLog, 'id'>[]) => {
+    const wls: WorkerLog[] = logs.map(l => ({ ...l, id: generateId() }));
+    persist(projects.map(p => p.id === projectId ? {
+      ...p, dayworks: p.dayworks.map(d => d.id === dayworkId ? {
+        ...d, tasks: d.tasks.map(t => t.id === taskId ? { ...t, workerLogs: [...t.workerLogs, ...wls] } : t)
+      } : d)
+    } : p));
+  }, [projects, persist]);
+
   const updateWorkerLog = useCallback((projectId: string, dayworkId: string, taskId: string, logId: string, updates: Partial<WorkerLog>) => {
     persist(projects.map(p => p.id === projectId ? {
       ...p, dayworks: p.dayworks.map(d => d.id === dayworkId ? {
