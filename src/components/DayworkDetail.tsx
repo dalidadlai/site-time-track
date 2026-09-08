@@ -49,6 +49,7 @@ interface DayworkDetailProps {
   onAddTask: (task: Omit<Task, 'id' | 'workerLogs'>) => void;
   onEditTask: (taskId: string, updates: Partial<Omit<Task, 'id' | 'workerLogs'>>) => void;
   onDeleteTask: (taskId: string) => void;
+  onAddWorkerLogs: (taskId: string, logs: Omit<WorkerLog, "id">[]) => void;
   onAddWorkerLog: (taskId: string, log: Omit<WorkerLog, 'id'>) => void;
   onUpdateWorkerLog: (taskId: string, logId: string, updates: Partial<WorkerLog>) => void;
   onDeleteWorkerLog: (taskId: string, logId: string) => void;
@@ -62,7 +63,7 @@ interface DayworkDetailProps {
 
 export default function DayworkDetail({
   daywork, projectName, siteManagers, workers, onBack,
-  onAddTask, onEditTask, onDeleteTask, onAddWorkerLog, onUpdateWorkerLog, onDeleteWorkerLog,
+  onAddTask, onEditTask, onDeleteTask, onAddWorkerLog, onAddWorkerLogs, onUpdateWorkerLog, onDeleteWorkerLog,
   onUpdateSignature, onCopyTask, plan, onSavePlan, dayActuals,
 }: DayworkDetailProps) {
   const [taskOpen, setTaskOpen] = useState(false);
