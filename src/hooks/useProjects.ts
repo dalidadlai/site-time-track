@@ -137,6 +137,6 @@ export function useProjects() {
     projects, addProject, updateProject, deleteProject,
     addDaywork, addDayworkWithTasks, updateDaywork, deleteDaywork,
     addTask, updateTask, deleteTask, copyTaskToDate,
-    addWorkerLog, updateWorkerLog, deleteWorkerLog,
+    addWorkerLog, addWorkerLogs, updateWorkerLog, deleteWorkerLog,
   };
 }
