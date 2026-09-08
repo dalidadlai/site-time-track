@@ -56,6 +56,8 @@ interface DayworkDetailProps {
   onUpdateSignature: (data: { signatureData?: string; signatureName?: string; signatureDate?: string }) => void;
   onCopyTask?: (taskId: string, date: string) => void;
   plan?: DayPlan;
+  /** Most recent earlier plan for this project — used to pre-tick the same crew. */
+  prevPlan?: DayPlan;
   onSavePlan?: (date: string, entries: PlanEntry[]) => void;
   // Actual hours per worker aggregated across ALL dayworks on this date (plan is per day, not per record)
   dayActuals?: Map<string, number>;
