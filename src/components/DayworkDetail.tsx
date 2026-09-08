@@ -15,9 +15,6 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
-import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -73,7 +70,7 @@ export default function DayworkDetail({
   const [taskDesc, setTaskDesc] = useState('');
   const [taskSmId, setTaskSmId] = useState('');
   const [workerDialogTask, setWorkerDialogTask] = useState<string | null>(null);
-  const [selectedWorkerId, setSelectedWorkerId] = useState('');
+  const [selectedWorkerIds, setSelectedWorkerIds] = useState<Set<string>>(new Set());
   // Default to collapsed so days with many tasks stay tidy; tap a task to expand
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [sigOpen, setSigOpen] = useState(false);
@@ -229,20 +226,22 @@ export default function DayworkDetail({
     toast({ title: '✓ Task updated' });
   };
 
-  const handleAddWorkerLog = () => {
-    if (!selectedWorkerId || !workerDialogTask) return;
-    const w = workers.find(pw => pw.id === selectedWorkerId);
-    if (!w) return;
-    onAddWorkerLog(workerDialogTask, {
-      workerId: w.id,
-      workerName: w.name,
-      workerRole: w.role,
-      startTime: '07:00',
-      finishTime: '17:00',
-      breakHours: 0.5,
+  const handleAddSelectedWorkers = () => {
+    if (!workerDialogTask || selectedWorkerIds.size === 0) return;
+    selectedWorkerIds.forEach(id => {
+      const w = workers.find(pw => pw.id === id);
+      if (!w) return;
+      onAddWorkerLog(workerDialogTask, {
+        workerId: w.id,
+        workerName: w.name,
+        workerRole: w.role,
+        startTime: '07:00',
+        finishTime: '17:00',
+        breakHours: 0.5,
+      });
     });
-    setSelectedWorkerId(''); setWorkerDialogTask(null);
-    toast({ title: '✓ Worker added', description: `${w.name} has been added to the task.` });
+    setSelectedWorkerIds(new Set()); setWorkerDialogTask(null);
+    toast({ title: '✓ Workers added', description: `${selectedWorkerIds.size} worker${selectedWorkerIds.size !== 1 ? 's' : ''} added to the task.` });
   };
 
   const handleSign = (signatureDataUrl: string) => {
@@ -427,7 +426,7 @@ export default function DayworkDetail({
                   })}
                   <div className="p-3">
                     <Button variant="ghost" size="sm" className="w-full text-muted-foreground gap-1.5"
-                      onClick={() => { setWorkerDialogTask(task.id); setSelectedWorkerId(''); }}>
+                      onClick={() => { setWorkerDialogTask(task.id); setSelectedWorkerIds(new Set()); }}>
                       <UserPlus className="w-4 h-4" /> Add Worker
                     </Button>
                   </div>
@@ -481,15 +480,29 @@ export default function DayworkDetail({
               <Textarea value={taskDesc} onChange={e => setTaskDesc(e.target.value)} placeholder={"e.g.\n1. Strip formwork\n2. Clean and oil panels\n3. Refix to next pour"} className="mt-1 text-base min-h-[100px]" />
             </div>
             <div>
-              <Label>Site Manager</Label>
-              <Select value={taskSmId} onValueChange={setTaskSmId}>
-                <SelectTrigger className="mt-1 h-11 text-base"><SelectValue placeholder="Select site manager" /></SelectTrigger>
-                <SelectContent>
-                  {siteManagers.map(sm => (
-                    <SelectItem key={sm.id} value={sm.id}>{sm.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="mb-2 block">Site Manager</Label>
+              <div className="space-y-2">
+                {siteManagers.map(sm => {
+                  const selected = taskSmId === sm.id;
+                  return (
+                    <button
+                      key={sm.id}
+                      type="button"
+                      onClick={() => setTaskSmId(selected ? '' : sm.id)}
+                      className={`w-full flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${selected ? 'bg-primary/10 border-primary/30' : 'bg-secondary/30 hover:bg-secondary/50'}`}
+                    >
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center ${selected ? 'bg-primary border-primary' : 'border-muted-foreground'}`}>
+                        {selected && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{sm.name}</p>
+                        {sm.phone && <p className="text-xs text-muted-foreground">{sm.phone}</p>}
+                      </div>
+                    </button>
+                  );
+                })}
+                {siteManagers.length === 0 && <p className="text-sm text-muted-foreground">Add site managers in Settings first.</p>}
+              </div>
             </div>
             <Button onClick={handleAddTask} disabled={!taskDesc.trim()} className="w-full h-12 text-base gap-2">
               <Check className="w-5 h-5" /> Save Task
@@ -515,15 +528,29 @@ export default function DayworkDetail({
               <Textarea value={editTaskDesc} onChange={e => setEditTaskDesc(e.target.value)} className="mt-1 text-base min-h-[100px]" />
             </div>
             <div>
-              <Label>Site Manager</Label>
-              <Select value={editTaskSmId} onValueChange={setEditTaskSmId}>
-                <SelectTrigger className="mt-1 h-11 text-base"><SelectValue placeholder="Select site manager" /></SelectTrigger>
-                <SelectContent>
-                  {siteManagers.map(sm => (
-                    <SelectItem key={sm.id} value={sm.id}>{sm.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="mb-2 block">Site Manager</Label>
+              <div className="space-y-2">
+                {siteManagers.map(sm => {
+                  const selected = editTaskSmId === sm.id;
+                  return (
+                    <button
+                      key={sm.id}
+                      type="button"
+                      onClick={() => setEditTaskSmId(selected ? '' : sm.id)}
+                      className={`w-full flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${selected ? 'bg-primary/10 border-primary/30' : 'bg-secondary/30 hover:bg-secondary/50'}`}
+                    >
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center ${selected ? 'bg-primary border-primary' : 'border-muted-foreground'}`}>
+                        {selected && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{sm.name}</p>
+                        {sm.phone && <p className="text-xs text-muted-foreground">{sm.phone}</p>}
+                      </div>
+                    </button>
+                  );
+                })}
+                {siteManagers.length === 0 && <p className="text-sm text-muted-foreground">Add site managers in Settings first.</p>}
+              </div>
             </div>
             <Button onClick={handleEditTask} disabled={!editTaskDesc.trim()} className="w-full h-12 text-base gap-2">
               <Check className="w-5 h-5" /> Save Changes
@@ -557,24 +584,42 @@ export default function DayworkDetail({
 
       {/* Add Worker Dialog */}
       <Dialog open={!!workerDialogTask} onOpenChange={(v) => !v && setWorkerDialogTask(null)}>
-        <DialogContent className="mx-4 max-w-md">
-          <DialogHeader><DialogTitle>Add Worker</DialogTitle></DialogHeader>
+        <DialogContent className="mx-4 max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Add Workers</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
-            <div>
-              <Label>Select Worker</Label>
-              <select
-                value={selectedWorkerId}
-                onChange={(e) => setSelectedWorkerId(e.target.value)}
-                className="mt-1 h-11 w-full rounded-md border border-input bg-background px-3 text-base"
-              >
-                <option value="">Choose worker</option>
-                {sortedWorkers.map(w => (
-                  <option key={w.id} value={w.id}>{w.name}{w.role ? ` (${w.role})` : ''}</option>
-                ))}
-              </select>
+            <p className="text-xs text-muted-foreground">Tick the workers for this task — no need to scroll.</p>
+            <div className="space-y-2">
+              {sortedWorkers.length === 0 && (
+                <p className="text-sm text-muted-foreground py-2">No workers yet — add workers in Settings first.</p>
+              )}
+              {sortedWorkers.map(w => {
+                const checked = selectedWorkerIds.has(w.id);
+                return (
+                  <label
+                    key={w.id}
+                    className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${checked ? 'bg-primary/10 border-primary/30' : 'bg-secondary/30 hover:bg-secondary/50'}`}
+                  >
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(c) => {
+                        setSelectedWorkerIds(prev => {
+                          const next = new Set(prev);
+                          if (c === true) next.add(w.id); else next.delete(w.id);
+                          return next;
+                        });
+                      }}
+                      className="w-5 h-5"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{w.name}</p>
+                      {w.role && <p className="text-xs text-muted-foreground">{w.role}</p>}
+                    </div>
+                  </label>
+                );
+              })}
             </div>
-            <Button onClick={handleAddWorkerLog} disabled={!selectedWorkerId} className="w-full h-12 text-base gap-2">
-              <Check className="w-5 h-5" /> Done
+            <Button onClick={handleAddSelectedWorkers} disabled={selectedWorkerIds.size === 0} className="w-full h-12 text-base gap-2">
+              <Check className="w-5 h-5" /> Add {selectedWorkerIds.size > 0 ? `${selectedWorkerIds.size} worker${selectedWorkerIds.size !== 1 ? 's' : ''}` : 'Workers'}
             </Button>
           </div>
         </DialogContent>
