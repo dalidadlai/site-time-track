@@ -465,7 +465,7 @@ export default function DayworkDetail({
 
       {/* Add Task Dialog */}
       <Dialog open={taskOpen} onOpenChange={setTaskOpen}>
-        <DialogContent className="mx-4 max-w-md">
+        <DialogContent className="mx-4 max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>New Task</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
             <div>
