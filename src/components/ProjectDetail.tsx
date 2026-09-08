@@ -353,8 +353,8 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
 
   return (
     <div className="min-h-screen pb-24">
-      <header className="px-4 pt-6 pb-4">
-        <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3 active-scale">
+      <header className="px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-4">
+        <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3 active-scale min-h-[44px] py-2 -ml-2 pl-2 pr-3 rounded-md">
           <ArrowLeft className="w-4 h-4" /> Projects
         </button>
         <div className="flex items-center justify-between">
