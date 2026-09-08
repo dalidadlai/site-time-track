@@ -658,16 +658,11 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                       }}
                       className={`flex items-center gap-2 rounded-lg p-2.5 cursor-pointer select-none ${on ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/30'}`}
                     >
-                      <Checkbox
-                        id={`plan-${w.id}`}
-                        checked={on}
-                        onCheckedChange={(c) => togglePlanWorker(w.id, c === true, planDate ?? new Date())}
-                        className="w-5 h-5"
-                      />
-                      <label htmlFor={`plan-${w.id}`} className="flex-1 min-w-0 cursor-pointer">
+                      <Checkbox checked={on} className="w-5 h-5 pointer-events-none" tabIndex={-1} />
+                      <div className="flex-1 min-w-0">
                         <span className="text-sm font-medium">{w.name}</span>
                         {w.role && <span className="text-xs text-muted-foreground ml-1">({w.role})</span>}
-                      </label>
+                      </div>
                       {on && (
                         <>
                           <Input

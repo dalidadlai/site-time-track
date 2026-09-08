@@ -698,16 +698,11 @@ export default function DayworkDetail({
                   }}
                   className={`flex items-center gap-3 rounded-lg p-2 cursor-pointer select-none ${on ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/30'}`}
                 >
-                  <Checkbox
-                    id={`dplan-${w.id}`}
-                    checked={on}
-                    onCheckedChange={(c) => togglePlanWorker(w.id, c === true)}
-                    className="w-5 h-5"
-                  />
-                  <label htmlFor={`dplan-${w.id}`} className="flex-1 min-w-0 cursor-pointer">
+                  <Checkbox checked={on} className="w-5 h-5 pointer-events-none" tabIndex={-1} />
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{w.name}</p>
                     {w.role && <p className="text-xs text-muted-foreground">{w.role}</p>}
-                  </label>
+                  </div>
                   {on && (
                     <>
                       <Input
