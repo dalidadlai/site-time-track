@@ -377,23 +377,25 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
 
       <div className="px-4 space-y-3">
         {sortedDays.length > 0 && (
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              <select
-                className="w-full h-11 pl-9 pr-8 rounded-md border border-input bg-background text-sm appearance-none"
-                value={filterSmId}
-                onChange={e => setFilterSmId(e.target.value)}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <button
+                onClick={() => setFilterSmId('')}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${filterSmId === '' ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-secondary-foreground border-transparent hover:bg-secondary/80'}`}
               >
-                <option value="">All site managers</option>
-                {siteManagers.map(sm => <option key={sm.id} value={sm.id}>{sm.name}</option>)}
-              </select>
+                All
+              </button>
+              {siteManagers.map(sm => (
+                <button
+                  key={sm.id}
+                  onClick={() => setFilterSmId(filterSmId === sm.id ? '' : sm.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${filterSmId === sm.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-secondary-foreground border-transparent hover:bg-secondary/80'}`}
+                >
+                  {sm.name}
+                </button>
+              ))}
             </div>
-            {filterSmId && (
-              <Button variant="ghost" size="sm" onClick={() => setFilterSmId('')} className="shrink-0 active-scale">
-                Clear
-              </Button>
-            )}
           </div>
         )}
 
@@ -587,16 +589,24 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                   <Label htmlFor="pdfSignedOnly" className="text-sm cursor-pointer">Signed only</Label>
                 </div>
                 <div>
-                  <Label htmlFor="pdfSm">Site Manager</Label>
-                  <select
-                    id="pdfSm"
-                    className="mt-1 w-full h-11 rounded-md border border-input bg-background px-3 text-sm"
-                    value={pdfSmId}
-                    onChange={e => setPdfSmId(e.target.value)}
-                  >
-                    <option value="">All site managers</option>
-                    {siteManagers.map(sm => <option key={sm.id} value={sm.id}>{sm.name}</option>)}
-                  </select>
+                  <Label className="mb-2 block">Site Manager</Label>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setPdfSmId('')}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${pdfSmId === '' ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-secondary-foreground border-transparent hover:bg-secondary/80'}`}
+                    >
+                      All
+                    </button>
+                    {siteManagers.map(sm => (
+                      <button
+                        key={sm.id}
+                        onClick={() => setPdfSmId(pdfSmId === sm.id ? '' : sm.id)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${pdfSmId === sm.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-secondary-foreground border-transparent hover:bg-secondary/80'}`}
+                      >
+                        {sm.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {pdfMatchedIds.length} daywork{pdfMatchedIds.length !== 1 ? 's' : ''} found{pdfSignedOnly ? ' (signed)' : ''}{pdfSmId ? ' · filtered by site manager' : ''}
