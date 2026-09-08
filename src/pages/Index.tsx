@@ -118,6 +118,9 @@ const Index = () => {
         siteManagers={siteManagers}
         workers={workers}
         plan={plans.find(p => p.projectId === project.id && p.date === dw.date)}
+        prevPlan={plans
+          .filter(p => p.projectId === project.id && p.date < dw.date && p.entries.length > 0)
+          .sort((a, b) => b.date.localeCompare(a.date))[0]}
         dayActuals={dayActuals}
         onSavePlan={(date, entries) => savePlan(project.id, date, entries)}
         onBack={() => setView({ screen: 'project', projectId: project.id })}
