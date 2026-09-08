@@ -109,10 +109,23 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const loadPlanFor = (date: Date) => {
     const checked: Record<string, boolean> = {};
     const hours: Record<string, string> = {};
-    const existing = planByDate.get(format(date, 'yyyy-MM-dd'));
-    existing?.entries.forEach(e => {
-      if (e.hours > 0) { checked[e.workerId] = true; hours[e.workerId] = String(e.hours); }
-    });
+    const key = format(date, 'yyyy-MM-dd');
+    const existing = planByDate.get(key);
+    if (existing) {
+      existing.entries.forEach(e => {
+        if (e.hours > 0) { checked[e.workerId] = true; hours[e.workerId] = String(e.hours); }
+      });
+    } else {
+      // No plan yet for this day — carry over the most recent previous day's crew,
+      // with hours defaulting to this weekday's standard. Editable before saving.
+      const prev = plans
+        .filter(p => p.projectId === project.id && p.date < key && p.entries.length > 0)
+        .sort((a, b) => b.date.localeCompare(a.date))[0];
+      const def = defaultPlanHours(date);
+      prev?.entries.forEach(e => {
+        if (e.hours > 0 && def > 0) { checked[e.workerId] = true; hours[e.workerId] = String(def); }
+      });
+    }
     setPlanChecked(checked);
     setPlanHours(hours);
   };
