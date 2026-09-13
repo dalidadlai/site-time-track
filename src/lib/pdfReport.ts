@@ -20,6 +20,10 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
   const styles = `
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
+      #lovable-badge,
+      [data-lovable-badge],
+      a[href*="lovable.dev"],
+      a[href*="lovable.app"][style*="position: fixed"] { display: none !important; }
       body { font-family: 'Inter', Arial, sans-serif; color: #1a1a2e; padding: 24px; font-size: 11px; }
       .page { page-break-after: always; }
       .page:last-child { page-break-after: avoid; }
@@ -223,6 +227,10 @@ export function generateJobSheetPdf(project: Project, company: CompanyProfile, s
   const styles = `
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
+      #lovable-badge,
+      [data-lovable-badge],
+      a[href*="lovable.dev"],
+      a[href*="lovable.app"][style*="position: fixed"] { display: none !important; }
       body { font-family: 'Inter', Arial, sans-serif; color: #1a1a2e; padding: 24px; font-size: 11px; }
       .header-bar { background: #c2702a; color: white; padding: 20px 24px 14px; margin: -24px -24px 0; display: flex; align-items: center; gap: 16px; }
       .header-logo { height: 48px; width: auto; background: white; border-radius: 4px; padding: 4px; }
