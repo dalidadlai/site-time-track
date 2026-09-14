@@ -333,3 +333,155 @@ export function generateJobSheetPdf(project: Project, company: CompanyProfile, s
   printWindow.document.close();
   setTimeout(() => printWindow.print(), 500);
 }
+
+// Per Site Manager job list: groups the whole selected range by site manager,
+// one section (own page) per manager with a single signature at the end.
+export function generateManagerJobListPdf(project: Project, company: CompanyProfile, siteManagers: SiteManager[], dayworkIds?: string[], siteManagerId?: string) {
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) return;
+
+  const allDays = [...project.dayworks].sort((a, b) => a.date.localeCompare(b.date));
+  const days = dayworkIds ? allDays.filter(dw => dayworkIds.includes(dw.id)) : allDays;
+  if (days.length === 0) return;
+
+  const fmt = (d: string) => format(new Date(d + 'T00:00:00'), 'EEE, d MMM yyyy');
+  const rangeLabel = days.length === 1
+    ? fmt(days[0].date)
+    : `${fmt(days[0].date)}  —  ${fmt(days[days.length - 1].date)}  (${days.length} days)`;
+
+  // Group: managerId -> date -> tasks
+  const groups = new Map<string, Map<string, typeof days[number]['tasks']>>();
+  days.forEach(dw => {
+    dw.tasks.forEach(task => {
+      if (siteManagerId && task.siteManagerId !== siteManagerId) return;
+      const key = task.siteManagerId || '__none__';
+      if (!groups.has(key)) groups.set(key, new Map());
+      const byDate = groups.get(key)!;
+      if (!byDate.has(dw.date)) byDate.set(dw.date, []);
+      byDate.get(dw.date)!.push(task);
+    });
+  });
+  if (groups.size === 0) return;
+
+  const styles = `
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      #lovable-badge, [data-lovable-badge], a[href*="lovable.dev"],
+      a[href*="lovable.app"][style*="position: fixed"] { display: none !important; }
+      body { font-family: 'Inter', Arial, sans-serif; color: #1a1a2e; padding: 24px; font-size: 11px; }
+      .header-bar { background: #c2702a; color: white; padding: 20px 24px 14px; margin: -24px -24px 0; display: flex; align-items: center; gap: 16px; }
+      .header-logo { height: 48px; width: auto; background: white; border-radius: 4px; padding: 4px; }
+      .company-name { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+      .company-details { font-size: 10px; color: rgba(255,255,255,0.85); line-height: 1.5; }
+      .header-divider { height: 3px; background: linear-gradient(to right,#a35a1f,#d4853a,#a35a1f); margin: 0 -24px 14px; }
+      .title { font-size: 15px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
+      .meta { color: #555; font-size: 10px; line-height: 1.6; }
+      .meta strong { color: #1a1a2e; }
+      h2 { font-size: 13px; font-weight: 700; margin: 14px 0 6px; border-bottom: 2px solid #c2702a; padding-bottom: 3px; }
+      h3 { font-size: 11px; font-weight: 600; margin: 10px 0 2px; color: #444; }
+      table { width: 100%; border-collapse: collapse; margin: 4px 0 10px; }
+      th, td { border: 1px solid #ddd; padding: 4px 8px; text-align: left; vertical-align: top; }
+      th { background: #f5f0eb; font-weight: 600; font-size: 9px; text-transform: uppercase; letter-spacing: 0.4px; }
+      .hours { text-align: right; width: 70px; font-variant-numeric: tabular-nums; }
+      .total-row { font-weight: 600; background: #faf6f1; }
+      .mgr-section { page-break-after: always; }
+      .mgr-section:last-child { page-break-after: avoid; }
+      .sig-section { margin-top: 28px; page-break-inside: avoid; max-width: 320px; }
+      .sig-line { border-bottom: 1px solid #333; height: 48px; margin-bottom: 6px; }
+      .sig-img { max-height: 60px; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; }
+      .sig-label { font-size: 10px; color: #666; }
+      @page { margin: 20mm 15mm; size: A4; }
+      @media print { body { padding: 0; } .header-bar { margin: 0; } .header-divider { margin: 0 0 14px; } }
+    </style>`;
+
+  const sections = [...groups.entries()].map(([mgrId, byDate], idx) => {
+    const sm = siteManagers.find(s => s.id === mgrId);
+    const mgrName = sm ? sm.name : 'Unassigned';
+
+    let mgrTotal = 0;
+    const workerMap = new Map<string, number>();
+
+    const dayBlocks = [...byDate.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([date, tasks]) => {
+      let dayTotal = 0;
+      const rows = tasks.map(task => {
+        const tHrs = taskTotalHours(task);
+        dayTotal += tHrs;
+        const workerRows = task.workerLogs.map(l => {
+          const h = calculateWorkerHours(l);
+          const name = l.workerName || 'Unknown';
+          workerMap.set(name, (workerMap.get(name) || 0) + h);
+          return `<tr><td>${name}${l.workerRole ? ' (' + l.workerRole + ')' : ''}</td><td class="hours">${h.toFixed(1)}</td></tr>`;
+        }).join('');
+        return `
+          <tr>
+            <td style="width:110px;">${task.workArea || '—'}</td>
+            <td><span style="white-space:pre-line;">${task.description}</span></td>
+            <td style="padding:0;">
+              <table style="margin:0;border:none;">${workerRows || '<tr><td>—</td><td class="hours">0.0</td></tr>'}
+                <tr class="total-row"><td>Total</td><td class="hours">${tHrs.toFixed(1)}</td></tr>
+              </table>
+            </td>
+          </tr>`;
+      }).join('');
+      mgrTotal += dayTotal;
+      return `
+        <h3>${fmt(date)} — ${dayTotal.toFixed(1)} hrs</h3>
+        <table>
+          <thead><tr><th>Work Area</th><th>Description</th><th style="width:210px;">Workers / Total Hours</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    }).join('');
+
+    const workerSummary = `
+      <h3>Hours by Worker</h3>
+      <table>
+        <thead><tr><th>Worker</th><th class="hours">Total Hours</th></tr></thead>
+        <tbody>
+          ${[...workerMap.entries()].sort((a, b) => b[1] - a[1]).map(([n, h]) => `<tr><td>${n}</td><td class="hours">${h.toFixed(1)}</td></tr>`).join('')}
+          <tr class="total-row"><td>Grand Total</td><td class="hours">${mgrTotal.toFixed(1)}</td></tr>
+        </tbody>
+      </table>`;
+
+    return `
+      <div class="mgr-section">
+        ${idx === 0 ? '' : ''}
+        <h2>Site Manager: ${mgrName}${sm?.phone ? ' · ' + sm.phone : ''}</h2>
+        <div class="meta" style="margin-bottom:8px;"><strong>Dates:</strong> ${rangeLabel}</div>
+        ${dayBlocks}
+        ${workerSummary}
+        <div class="sig-section">
+          <div class="sig-line"></div>
+          <div class="sig-label">Site Manager Signature (${mgrName})</div>
+          <div class="sig-label" style="margin-top:10px;">Name: ${mgrName}</div>
+          <div class="sig-label" style="margin-top:6px;">Date: _______________________</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html><head><title>Job List by Site Manager - ${project.name}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    ${styles}</head>
+    <body>
+      <div class="header-bar">
+        ${company.logo ? `<img src="${company.logo}" class="header-logo" alt="Logo" />` : ''}
+        <div>
+          <div class="company-name">${company.name || 'Job List'}</div>
+          <div class="company-details">${[company.address, company.email, company.phone].filter(Boolean).join(' &nbsp;·&nbsp; ')}</div>
+        </div>
+      </div>
+      <div class="header-divider"></div>
+      <div class="title">Job List by Site Manager</div>
+      <div class="meta" style="margin-bottom:12px;">
+        <strong>Project:</strong> ${project.name}<br>
+        <strong>Client:</strong> ${project.client || '—'}<br>
+        <strong>Site Address:</strong> ${project.siteAddress || '—'}<br>
+        <strong>Dates:</strong> ${rangeLabel}
+      </div>
+      ${sections}
+    </body></html>
+  `);
+  printWindow.document.close();
+  setTimeout(() => printWindow.print(), 500);
+}

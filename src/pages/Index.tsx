@@ -6,7 +6,7 @@ import ProjectsList from '@/components/ProjectsList';
 import ProjectDetail from '@/components/ProjectDetail';
 import DayworkDetail from '@/components/DayworkDetail';
 import SettingsPage from '@/components/SettingsPage';
-import { generateDayworkPdf, generateJobSheetPdf } from '@/lib/pdfReport';
+import { generateDayworkPdf, generateJobSheetPdf, generateManagerJobListPdf } from '@/lib/pdfReport';
 import { calculateWorkerHours } from '@/lib/types';
 
 type View =
@@ -90,7 +90,7 @@ const Index = () => {
           }}
           onEditDaywork={(id, data) => updateDaywork(project.id, id, data)}
           onDeleteDaywork={(id) => deleteDaywork(project.id, id)}
-          onGeneratePdf={(dayworkIds, siteManagerId, mode) => (mode === 'jobsheet' ? generateJobSheetPdf : generateDayworkPdf)(project, company, siteManagers, dayworkIds, siteManagerId)}
+          onGeneratePdf={(dayworkIds, siteManagerId, mode) => (mode === 'jobsheet' ? generateJobSheetPdf : mode === 'bymanager' ? generateManagerJobListPdf : generateDayworkPdf)(project, company, siteManagers, dayworkIds, siteManagerId)}
         />
       </div>
     );
@@ -154,7 +154,7 @@ const Index = () => {
         }}
         onEditDaywork={(id, data) => updateDaywork(project.id, id, data)}
         onDeleteDaywork={(id) => deleteDaywork(project.id, id)}
-        onGeneratePdf={(dayworkIds, siteManagerId, mode) => (mode === 'jobsheet' ? generateJobSheetPdf : generateDayworkPdf)(project, company, siteManagers, dayworkIds, siteManagerId)}
+        onGeneratePdf={(dayworkIds, siteManagerId, mode) => (mode === 'jobsheet' ? generateJobSheetPdf : mode === 'bymanager' ? generateManagerJobListPdf : generateDayworkPdf)(project, company, siteManagers, dayworkIds, siteManagerId)}
       />
     );
 
