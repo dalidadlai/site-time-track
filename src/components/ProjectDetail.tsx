@@ -38,7 +38,7 @@ interface ProjectDetailProps {
   onAddDayworkWithTasks: (data: DayworkRecord) => void;
   onEditDaywork: (id: string, data: Partial<DayworkRecord>) => void;
   onDeleteDaywork: (id: string) => void;
-  onGeneratePdf: (dayworkIds: string[], siteManagerId?: string, mode?: 'report' | 'jobsheet') => void;
+  onGeneratePdf: (dayworkIds: string[], siteManagerId?: string, mode?: 'report' | 'jobsheet' | 'bymanager') => void;
   onNavigateToDaywork?: (dayworkId: string) => void;
 }
 
@@ -71,7 +71,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [pdfSignedOnly, setPdfSignedOnly] = useState(false);
   const [pdfSmId, setPdfSmId] = useState<string>('');
   const [filterSmId, setFilterSmId] = useState<string>('');
-  const [pdfMode, setPdfMode] = useState<'report' | 'jobsheet'>('report');
+  const [pdfMode, setPdfMode] = useState<'report' | 'jobsheet' | 'bymanager'>('report');
 
   // Planned hours state: check who is on site; hours auto-fill by weekday
   // (Mon–Thu 9.5, Fri 8.5, Sat 6) and can be overridden per worker.
@@ -576,9 +576,14 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                     onClick={() => setPdfMode('report')}>Daywork Report</Button>
                   <Button variant={pdfMode === 'jobsheet' ? 'default' : 'outline'} className="h-11"
                     onClick={() => setPdfMode('jobsheet')}>Job Sheet</Button>
+                  <Button variant={pdfMode === 'bymanager' ? 'default' : 'outline'} className="h-11 col-span-2"
+                    onClick={() => setPdfMode('bymanager')}>Job List by Site Manager</Button>
                 </div>
                 {pdfMode === 'jobsheet' && (
                   <p className="text-xs text-muted-foreground">Job Sheet: multi-day compact sheet, each worker shows total hours only.</p>
+                )}
+                {pdfMode === 'bymanager' && (
+                  <p className="text-xs text-muted-foreground">Groups the whole date range by site manager — one page and one signature per manager.</p>
                 )}
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" onClick={() => applyPdfPreset('thisWeek')}>This Week</Button>
@@ -625,7 +630,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                   {pdfMatchedIds.length} daywork{pdfMatchedIds.length !== 1 ? 's' : ''} found{pdfSignedOnly ? ' (signed)' : ''}{pdfSmId ? ' · filtered by site manager' : ''}
                 </p>
                 <Button className="w-full gap-2" onClick={handlePdfGenerate} disabled={pdfMatchedIds.length === 0}>
-                  <FileText className="w-4 h-4" /> {pdfMode === 'jobsheet' ? 'Generate Job Sheet' : 'Generate PDF'} ({pdfMatchedIds.length})
+                  <FileText className="w-4 h-4" /> {pdfMode === 'jobsheet' ? 'Generate Job Sheet' : pdfMode === 'bymanager' ? 'Generate Job List' : 'Generate PDF'} ({pdfMatchedIds.length})
                 </Button>
               </div>
             </DialogContent>
