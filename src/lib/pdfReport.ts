@@ -99,7 +99,11 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
   const dayPages = selectedDays.map((dw, idx) => {
     const totalHrs = dayworkTotalHours(dw);
 
-    const taskSections = dw.tasks.map(task => {
+    // Sort tasks by site manager so each manager's jobs appear together
+    const smName = (id?: string) => siteManagers.find(s => s.id === id)?.name || '￿';
+    const sortedTasks = [...dw.tasks].sort((a, b) => smName(a.siteManagerId).localeCompare(smName(b.siteManagerId)));
+
+    const taskSections = sortedTasks.map(task => {
       const sm = siteManagers.find(s => s.id === task.siteManagerId);
       const tHrs = taskTotalHours(task);
 
