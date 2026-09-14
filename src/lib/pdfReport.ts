@@ -386,7 +386,10 @@ export function generateManagerJobListPdf(project: Project, company: CompanyProf
       byDate.get(dw.date)!.push(task);
     });
   });
-  if (groups.size === 0) return;
+  if (groups.size === 0) {
+    window.alert('No tasks found for the selected dates / site manager.');
+    return;
+  }
 
   const styles = `
     <style>
