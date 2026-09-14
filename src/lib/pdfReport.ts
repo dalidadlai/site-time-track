@@ -1,9 +1,42 @@
 import { Project, CompanyProfile, SiteManager, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
 import { format } from 'date-fns';
 
+// Opens a print view. Falls back to a hidden iframe when popups are blocked
+// (common on mobile Safari / Chrome), so the PDF always renders.
+function printHtml(html: string) {
+  try {
+    const w = window.open('', '_blank');
+    if (w && w.document) {
+      w.document.open();
+      w.document.write(html);
+      w.document.close();
+      setTimeout(() => { try { w.focus(); w.print(); } catch { /* ignore */ } }, 600);
+      return;
+    }
+  } catch { /* fall through to iframe */ }
+
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  iframe.srcdoc = html;
+  iframe.onload = () => {
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch { /* ignore */ }
+      setTimeout(() => iframe.remove(), 60000);
+    }, 400);
+  };
+  document.body.appendChild(iframe);
+}
+
 export function generateDayworkPdf(project: Project, company: CompanyProfile, siteManagers: SiteManager[], dayworkIds?: string[], siteManagerId?: string) {
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) return;
 
   const allDays = [...project.dayworks].sort((a, b) => a.date.localeCompare(b.date));
   let selectedDays = dayworkIds ? allDays.filter(dw => dayworkIds.includes(dw.id)) : allDays;
@@ -177,7 +210,7 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
     `;
   })() : '';
 
-  printWindow.document.write(`
+  printHtml(`
     <!DOCTYPE html>
     <html>
     <head>
@@ -191,15 +224,11 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
     </body>
     </html>
   `);
-  printWindow.document.close();
-  setTimeout(() => printWindow.print(), 500);
 }
 
 // Compact Job Sheet: covers multiple days in one continuous sheet,
 // each worker shown with TOTAL HOURS only (no start/finish times).
 export function generateJobSheetPdf(project: Project, company: CompanyProfile, siteManagers: SiteManager[], dayworkIds?: string[], siteManagerId?: string) {
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) return;
 
   const allDays = [...project.dayworks].sort((a, b) => a.date.localeCompare(b.date));
   let days = dayworkIds ? allDays.filter(dw => dayworkIds.includes(dw.id)) : allDays;
@@ -299,7 +328,7 @@ export function generateJobSheetPdf(project: Project, company: CompanyProfile, s
     ? `<img src="${lastSigned.signatureData}" class="sig-img" alt="Signature" />`
     : '<div class="sig-line"></div>';
 
-  printWindow.document.write(`
+  printHtml(`
     <!DOCTYPE html>
     <html><head><title>Job Sheet - ${project.name}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -330,15 +359,11 @@ export function generateJobSheetPdf(project: Project, company: CompanyProfile, s
       </div>
     </body></html>
   `);
-  printWindow.document.close();
-  setTimeout(() => printWindow.print(), 500);
 }
 
 // Per Site Manager job list: groups the whole selected range by site manager,
 // one section (own page) per manager with a single signature at the end.
 export function generateManagerJobListPdf(project: Project, company: CompanyProfile, siteManagers: SiteManager[], dayworkIds?: string[], siteManagerId?: string) {
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) return;
 
   const allDays = [...project.dayworks].sort((a, b) => a.date.localeCompare(b.date));
   const days = dayworkIds ? allDays.filter(dw => dayworkIds.includes(dw.id)) : allDays;
@@ -458,7 +483,7 @@ export function generateManagerJobListPdf(project: Project, company: CompanyProf
       </div>`;
   }).join('');
 
-  printWindow.document.write(`
+  printHtml(`
     <!DOCTYPE html>
     <html><head><title>Job List by Site Manager - ${project.name}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -482,6 +507,4 @@ export function generateManagerJobListPdf(project: Project, company: CompanyProf
       ${sections}
     </body></html>
   `);
-  printWindow.document.close();
-  setTimeout(() => printWindow.print(), 500);
 }
