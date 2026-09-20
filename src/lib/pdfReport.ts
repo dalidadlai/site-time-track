@@ -581,7 +581,7 @@ export function generateTimesheetPdf(project: Project, company: CompanyProfile, 
       .sig-section { margin-top: 28px; page-break-inside: avoid; max-width: 320px; }
       .sig-line { border-bottom: 1px solid #333; height: 48px; margin-bottom: 6px; }
       .sig-label { font-size: 10px; color: #666; }
-      @page { margin: 20mm 15mm; size: A4; }
+      @page { margin: 15mm 12mm; size: A4 landscape; }
       @media print { body { padding: 0; } .header-bar { margin: 0; } .header-divider { margin: 0 0 14px; } }
     </style>`;
 
