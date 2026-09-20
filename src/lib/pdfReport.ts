@@ -581,7 +581,7 @@ export function generateTimesheetPdf(project: Project, company: CompanyProfile, 
       .sig-section { margin-top: 28px; page-break-inside: avoid; max-width: 320px; }
       .sig-line { border-bottom: 1px solid #333; height: 48px; margin-bottom: 6px; }
       .sig-label { font-size: 10px; color: #666; }
-      @page { margin: 20mm 15mm; size: A4; }
+      @page { margin: 15mm 12mm; size: A4 landscape; }
       @media print { body { padding: 0; } .header-bar { margin: 0; } .header-divider { margin: 0 0 14px; } }
     </style>`;
 
@@ -589,53 +589,55 @@ export function generateTimesheetPdf(project: Project, company: CompanyProfile, 
   let grandTotal = 0;
 
   const weekBlocks = weeks.map(week => {
+    // dayTotals[date][worker] = hours
+    const dayTotals = new Map<string, Map<string, number>>();
     const weekWorkerMap = new Map<string, number>();
 
-    const daySections = week.days.map(dw => {
-      // Aggregate each worker across all tasks that day
-      const dayWorkerMap = new Map<string, number>();
+    week.days.forEach(dw => {
+      const m = new Map<string, number>();
       dw.tasks.forEach(t => t.workerLogs.forEach(l => {
         const h = calculateWorkerHours(l);
         const name = l.workerName || 'Unknown';
-        dayWorkerMap.set(name, (dayWorkerMap.get(name) || 0) + h);
+        m.set(name, (m.get(name) || 0) + h);
         weekWorkerMap.set(name, (weekWorkerMap.get(name) || 0) + h);
         grandWorkerMap.set(name, (grandWorkerMap.get(name) || 0) + h);
       }));
-      const dayTotal = [...dayWorkerMap.values()].reduce((s, h) => s + h, 0);
-      grandTotal += dayTotal;
-
-      const rows = [...dayWorkerMap.entries()]
-        .sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([name, h]) => `<tr><td>${name}</td><td>${fmt(dw.date)}</td><td class="hours">${h.toFixed(1)}</td></tr>`)
-        .join('');
-
-      return `
-        <h3>${fmt(dw.date)}</h3>
-        <table>
-          <thead><tr><th>Name</th><th style="width:130px;">Date</th><th class="hours">Hours</th></tr></thead>
-          <tbody>
-            ${rows || '<tr><td colspan="3">No workers recorded</td></tr>'}
-            <tr class="total-row"><td colspan="2">Day Total</td><td class="hours">${dayTotal.toFixed(1)}</td></tr>
-          </tbody>
-        </table>`;
-    }).join('');
+      dayTotals.set(dw.date, m);
+    });
 
     const weekTotal = [...weekWorkerMap.values()].reduce((s, h) => s + h, 0);
-    const weekSummary = `
-      <h3>Week Total by Worker</h3>
-      <table>
-        <thead><tr><th>Worker</th><th class="hours">Total Hours</th></tr></thead>
-        <tbody>
-          ${[...weekWorkerMap.entries()].sort((a, b) => b[1] - a[1]).map(([n, h]) => `<tr><td>${n}</td><td class="hours">${h.toFixed(1)}</td></tr>`).join('')}
-          <tr class="total-row"><td>Week Total</td><td class="hours">${weekTotal.toFixed(1)}</td></tr>
-        </tbody>
-      </table>`;
+    grandTotal += weekTotal;
+
+    const dayHeaders = week.days.map(dw => {
+      const dt = new Date(dw.date + 'T00:00:00');
+      return `<th class="hours">${format(dt, 'EEE')}<br><span style="font-weight:400;">${format(dt, 'd MMM')}</span></th>`;
+    }).join('');
+
+    const workerRows = [...weekWorkerMap.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([name, total]) => {
+        const cells = week.days.map(dw => {
+          const h = dayTotals.get(dw.date)?.get(name);
+          return `<td class="hours">${h != null ? h.toFixed(1) : ''}</td>`;
+        }).join('');
+        return `<tr><td>${name}</td>${cells}<td class="hours" style="font-weight:600;">${total.toFixed(1)}</td></tr>`;
+      }).join('');
+
+    const dayTotalCells = week.days.map(dw => {
+      const t = [...(dayTotals.get(dw.date)?.values() || [])].reduce((s, h) => s + h, 0);
+      return `<td class="hours">${t > 0 ? t.toFixed(1) : ''}</td>`;
+    }).join('');
 
     return `
       <div class="week-block">
         <h2>Week: ${week.label}</h2>
-        ${daySections}
-        ${weekSummary}
+        <table>
+          <thead><tr><th style="width:140px;">Worker Name</th>${dayHeaders}<th class="hours" style="background:#efe4d6;">Weekly Total</th></tr></thead>
+          <tbody>
+            ${workerRows || `<tr><td colspan="${week.days.length + 2}">No workers recorded</td></tr>`}
+            <tr class="total-row"><td>Day Total</td>${dayTotalCells}<td class="hours">${weekTotal.toFixed(1)}</td></tr>
+          </tbody>
+        </table>
       </div>`;
   }).join('');
 
