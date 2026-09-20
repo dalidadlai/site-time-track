@@ -515,3 +515,169 @@ export function generateManagerJobListPdf(project: Project, company: CompanyProf
     </body></html>
   `);
 }
+
+// Weekly Timesheet: one row per worker per day (Name / Date / Hours),
+// with a per-worker total block at the end of each week (Mon–Sun).
+export function generateTimesheetPdf(project: Project, company: CompanyProfile, _siteManagers: SiteManager[], dayworkIds?: string[], siteManagerId?: string) {
+  const allDays = [...project.dayworks].sort((a, b) => a.date.localeCompare(b.date));
+  let days = dayworkIds ? allDays.filter(dw => dayworkIds.includes(dw.id)) : allDays;
+  if (siteManagerId) {
+    days = days
+      .map(dw => ({ ...dw, tasks: dw.tasks.filter(t => t.siteManagerId === siteManagerId) }))
+      .filter(dw => dw.tasks.length > 0);
+  }
+  if (days.length === 0) return;
+
+  const fmt = (d: string) => format(new Date(d + 'T00:00:00'), 'EEE, d MMM yyyy');
+  const rangeLabel = days.length === 1
+    ? fmt(days[0].date)
+    : `${fmt(days[0].date)}  —  ${fmt(days[days.length - 1].date)}  (${days.length} days)`;
+
+  // Monday of the week containing a date (local)
+  const weekKey = (d: string) => {
+    const dt = new Date(d + 'T00:00:00');
+    const dow = (dt.getDay() + 6) % 7; // Mon = 0
+    dt.setDate(dt.getDate() - dow);
+    return format(dt, 'yyyy-MM-dd');
+  };
+
+  // Group days into weeks in date order
+  const weeks: { key: string; label: string; days: typeof days }[] = [];
+  let currentKey = '';
+  days.forEach(dw => {
+    const k = weekKey(dw.date);
+    if (k !== currentKey) {
+      currentKey = k;
+      const wStart = new Date(k + 'T00:00:00');
+      const wEnd = new Date(wStart);
+      wEnd.setDate(wEnd.getDate() + 6);
+      weeks.push({ key: k, label: `${format(wStart, 'd MMM')} — ${format(wEnd, 'd MMM yyyy')}`, days: [] });
+    }
+    weeks[weeks.length - 1].days.push(dw);
+  });
+
+  const styles = `
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      #lovable-badge, [data-lovable-badge], a[href*="lovable.dev"],
+      a[href*="lovable.app"][style*="position: fixed"] { display: none !important; }
+      body { font-family: 'Inter', Arial, sans-serif; color: #1a1a2e; padding: 24px; font-size: 11px; }
+      .header-bar { background: #c2702a; color: white; padding: 20px 24px 14px; margin: -24px -24px 0; display: flex; align-items: center; gap: 16px; }
+      .header-logo { height: 48px; width: auto; background: white; border-radius: 4px; padding: 4px; }
+      .company-name { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+      .company-details { font-size: 10px; color: rgba(255,255,255,0.85); line-height: 1.5; }
+      .header-divider { height: 3px; background: linear-gradient(to right,#a35a1f,#d4853a,#a35a1f); margin: 0 -24px 14px; }
+      .title { font-size: 15px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
+      .meta { color: #555; font-size: 10px; line-height: 1.6; }
+      .meta strong { color: #1a1a2e; }
+      h2 { font-size: 13px; font-weight: 700; margin: 18px 0 6px; border-bottom: 2px solid #c2702a; padding-bottom: 3px; }
+      h3 { font-size: 11px; font-weight: 600; margin: 12px 0 4px; color: #444; }
+      table { width: 100%; border-collapse: collapse; margin: 4px 0 12px; }
+      th, td { border: 1px solid #ddd; padding: 4px 8px; text-align: left; }
+      th { background: #f5f0eb; font-weight: 600; font-size: 9px; text-transform: uppercase; letter-spacing: 0.4px; }
+      .hours { text-align: right; width: 90px; font-variant-numeric: tabular-nums; }
+      .total-row { font-weight: 600; background: #faf6f1; }
+      .week-block { page-break-inside: avoid; }
+      .sig-section { margin-top: 28px; page-break-inside: avoid; max-width: 320px; }
+      .sig-line { border-bottom: 1px solid #333; height: 48px; margin-bottom: 6px; }
+      .sig-label { font-size: 10px; color: #666; }
+      @page { margin: 20mm 15mm; size: A4; }
+      @media print { body { padding: 0; } .header-bar { margin: 0; } .header-divider { margin: 0 0 14px; } }
+    </style>`;
+
+  const grandWorkerMap = new Map<string, number>();
+  let grandTotal = 0;
+
+  const weekBlocks = weeks.map(week => {
+    const weekWorkerMap = new Map<string, number>();
+
+    const daySections = week.days.map(dw => {
+      // Aggregate each worker across all tasks that day
+      const dayWorkerMap = new Map<string, number>();
+      dw.tasks.forEach(t => t.workerLogs.forEach(l => {
+        const h = calculateWorkerHours(l);
+        const name = l.workerName || 'Unknown';
+        dayWorkerMap.set(name, (dayWorkerMap.get(name) || 0) + h);
+        weekWorkerMap.set(name, (weekWorkerMap.get(name) || 0) + h);
+        grandWorkerMap.set(name, (grandWorkerMap.get(name) || 0) + h);
+      }));
+      const dayTotal = [...dayWorkerMap.values()].reduce((s, h) => s + h, 0);
+      grandTotal += dayTotal;
+
+      const rows = [...dayWorkerMap.entries()]
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([name, h]) => `<tr><td>${name}</td><td>${fmt(dw.date)}</td><td class="hours">${h.toFixed(1)}</td></tr>`)
+        .join('');
+
+      return `
+        <h3>${fmt(dw.date)}</h3>
+        <table>
+          <thead><tr><th>Name</th><th style="width:130px;">Date</th><th class="hours">Hours</th></tr></thead>
+          <tbody>
+            ${rows || '<tr><td colspan="3">No workers recorded</td></tr>'}
+            <tr class="total-row"><td colspan="2">Day Total</td><td class="hours">${dayTotal.toFixed(1)}</td></tr>
+          </tbody>
+        </table>`;
+    }).join('');
+
+    const weekTotal = [...weekWorkerMap.values()].reduce((s, h) => s + h, 0);
+    const weekSummary = `
+      <h3>Week Total by Worker</h3>
+      <table>
+        <thead><tr><th>Worker</th><th class="hours">Total Hours</th></tr></thead>
+        <tbody>
+          ${[...weekWorkerMap.entries()].sort((a, b) => b[1] - a[1]).map(([n, h]) => `<tr><td>${n}</td><td class="hours">${h.toFixed(1)}</td></tr>`).join('')}
+          <tr class="total-row"><td>Week Total</td><td class="hours">${weekTotal.toFixed(1)}</td></tr>
+        </tbody>
+      </table>`;
+
+    return `
+      <div class="week-block">
+        <h2>Week: ${week.label}</h2>
+        ${daySections}
+        ${weekSummary}
+      </div>`;
+  }).join('');
+
+  const grandSummary = weeks.length > 1 ? `
+    <h2>Overall Total by Worker</h2>
+    <table>
+      <thead><tr><th>Worker</th><th class="hours">Total Hours</th></tr></thead>
+      <tbody>
+        ${[...grandWorkerMap.entries()].sort((a, b) => b[1] - a[1]).map(([n, h]) => `<tr><td>${n}</td><td class="hours">${h.toFixed(1)}</td></tr>`).join('')}
+        <tr class="total-row"><td>Grand Total</td><td class="hours">${grandTotal.toFixed(1)}</td></tr>
+      </tbody>
+    </table>` : '';
+
+  printHtml(`
+    <!DOCTYPE html>
+    <html><head><title>Timesheet - ${project.name}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    ${styles}</head>
+    <body>
+      <div class="header-bar">
+        ${company.logo ? `<img src="${company.logo}" class="header-logo" alt="Logo" />` : ''}
+        <div>
+          <div class="company-name">${company.name || 'Timesheet'}</div>
+          <div class="company-details">${[company.address, company.email, company.phone].filter(Boolean).join(' &nbsp;·&nbsp; ')}</div>
+        </div>
+      </div>
+      <div class="header-divider"></div>
+      <div class="title">Timesheet</div>
+      <div class="meta" style="margin-bottom:12px;">
+        <strong>Project:</strong> ${project.name}<br>
+        <strong>Client:</strong> ${project.client || '—'}<br>
+        <strong>Site Address:</strong> ${project.siteAddress || '—'}<br>
+        <strong>Dates:</strong> ${rangeLabel}
+      </div>
+      ${weekBlocks}
+      ${grandSummary}
+      <div class="sig-section">
+        <div class="sig-line"></div>
+        <div class="sig-label">Approved By</div>
+        <div class="sig-label" style="margin-top:10px;">Name: _______________________</div>
+        <div class="sig-label" style="margin-top:6px;">Date: _______________________</div>
+      </div>
+    </body></html>
+  `);
+}
