@@ -527,6 +527,21 @@ export function generateTimesheetPdf(project: Project, company: CompanyProfile, 
       .map(dw => ({ ...dw, tasks: dw.tasks.filter(t => t.siteManagerId === siteManagerId) }))
       .filter(dw => dw.tasks.length > 0);
   }
+
+  // Include plan-only dates (no daywork record) inside the selected date range
+  const projectPlans = plans.filter(p => p.projectId === project.id && p.entries.length > 0);
+  if (days.length > 0) {
+    const min = days[0].date, max = days[days.length - 1].date;
+    const existing = new Set(days.map(d => d.date));
+    const extra = projectPlans
+      .filter(p => p.date >= min && p.date <= max && !existing.has(p.date))
+      .map(p => ({ id: `plan-${p.date}`, date: p.date, siteContactName: '', siteContactPhone: '', purchaseOrder: '', tasks: [] }));
+    days = [...days, ...extra].sort((a, b) => a.date.localeCompare(b.date));
+  } else if (projectPlans.length > 0 && !dayworkIds) {
+    days = projectPlans
+      .map(p => ({ id: `plan-${p.date}`, date: p.date, siteContactName: '', siteContactPhone: '', purchaseOrder: '', tasks: [] }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
   if (days.length === 0) return;
 
   const fmt = (d: string) => format(new Date(d + 'T00:00:00'), 'EEE, d MMM yyyy');
@@ -596,13 +611,24 @@ export function generateTimesheetPdf(project: Project, company: CompanyProfile, 
 
     week.days.forEach(dw => {
       const m = new Map<string, number>();
-      dw.tasks.forEach(t => t.workerLogs.forEach(l => {
-        const h = calculateWorkerHours(l);
-        const name = l.workerName || 'Unknown';
-        m.set(name, (m.get(name) || 0) + h);
-        weekWorkerMap.set(name, (weekWorkerMap.get(name) || 0) + h);
-        grandWorkerMap.set(name, (grandWorkerMap.get(name) || 0) + h);
-      }));
+      const plan = projectPlans.find(p => p.date === dw.date);
+      if (plan) {
+        // Planned hours win: count workers even when no tasks were recorded
+        plan.entries.forEach(e => {
+          const name = e.workerName || 'Unknown';
+          m.set(name, (m.get(name) || 0) + e.hours);
+          weekWorkerMap.set(name, (weekWorkerMap.get(name) || 0) + e.hours);
+          grandWorkerMap.set(name, (grandWorkerMap.get(name) || 0) + e.hours);
+        });
+      } else {
+        dw.tasks.forEach(t => t.workerLogs.forEach(l => {
+          const h = calculateWorkerHours(l);
+          const name = l.workerName || 'Unknown';
+          m.set(name, (m.get(name) || 0) + h);
+          weekWorkerMap.set(name, (weekWorkerMap.get(name) || 0) + h);
+          grandWorkerMap.set(name, (grandWorkerMap.get(name) || 0) + h);
+        }));
+      }
       dayTotals.set(dw.date, m);
     });
 
