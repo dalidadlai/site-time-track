@@ -1,4 +1,4 @@
-import { Project, CompanyProfile, SiteManager, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
+import { Project, CompanyProfile, SiteManager, DayPlan, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
 import { format } from 'date-fns';
 
 // Opens a print view. Falls back to a hidden iframe when popups are blocked
@@ -516,9 +516,10 @@ export function generateManagerJobListPdf(project: Project, company: CompanyProf
   `);
 }
 
-// Weekly Timesheet: one row per worker per day (Name / Date / Hours),
-// with a per-worker total block at the end of each week (Mon–Sun).
-export function generateTimesheetPdf(project: Project, company: CompanyProfile, _siteManagers: SiteManager[], dayworkIds?: string[], siteManagerId?: string) {
+// Weekly Timesheet: matrix of worker rows x day columns showing hours only.
+// Hours come from Plan Hours when a plan exists for that date (even with no
+// tasks recorded); otherwise they fall back to the actual task hours.
+export function generateTimesheetPdf(project: Project, company: CompanyProfile, _siteManagers: SiteManager[], dayworkIds?: string[], siteManagerId?: string, plans: DayPlan[] = []) {
   const allDays = [...project.dayworks].sort((a, b) => a.date.localeCompare(b.date));
   let days = dayworkIds ? allDays.filter(dw => dayworkIds.includes(dw.id)) : allDays;
   if (siteManagerId) {
