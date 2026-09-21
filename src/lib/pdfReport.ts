@@ -1,4 +1,4 @@
-import { Project, CompanyProfile, SiteManager, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
+import { Project, CompanyProfile, SiteManager, DayPlan, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
 import { format } from 'date-fns';
 
 // Opens a print view. Falls back to a hidden iframe when popups are blocked
@@ -516,15 +516,31 @@ export function generateManagerJobListPdf(project: Project, company: CompanyProf
   `);
 }
 
-// Weekly Timesheet: one row per worker per day (Name / Date / Hours),
-// with a per-worker total block at the end of each week (Mon–Sun).
-export function generateTimesheetPdf(project: Project, company: CompanyProfile, _siteManagers: SiteManager[], dayworkIds?: string[], siteManagerId?: string) {
+// Weekly Timesheet: matrix of worker rows x day columns showing hours only.
+// Hours come from Plan Hours when a plan exists for that date (even with no
+// tasks recorded); otherwise they fall back to the actual task hours.
+export function generateTimesheetPdf(project: Project, company: CompanyProfile, _siteManagers: SiteManager[], dayworkIds?: string[], siteManagerId?: string, plans: DayPlan[] = []) {
   const allDays = [...project.dayworks].sort((a, b) => a.date.localeCompare(b.date));
   let days = dayworkIds ? allDays.filter(dw => dayworkIds.includes(dw.id)) : allDays;
   if (siteManagerId) {
     days = days
       .map(dw => ({ ...dw, tasks: dw.tasks.filter(t => t.siteManagerId === siteManagerId) }))
       .filter(dw => dw.tasks.length > 0);
+  }
+
+  // Include plan-only dates (no daywork record) inside the selected date range
+  const projectPlans = plans.filter(p => p.projectId === project.id && p.entries.length > 0);
+  if (days.length > 0) {
+    const min = days[0].date, max = days[days.length - 1].date;
+    const existing = new Set(days.map(d => d.date));
+    const extra = projectPlans
+      .filter(p => p.date >= min && p.date <= max && !existing.has(p.date))
+      .map(p => ({ id: `plan-${p.date}`, date: p.date, siteContactName: '', siteContactPhone: '', purchaseOrder: '', tasks: [] }));
+    days = [...days, ...extra].sort((a, b) => a.date.localeCompare(b.date));
+  } else if (projectPlans.length > 0 && !dayworkIds) {
+    days = projectPlans
+      .map(p => ({ id: `plan-${p.date}`, date: p.date, siteContactName: '', siteContactPhone: '', purchaseOrder: '', tasks: [] }))
+      .sort((a, b) => a.date.localeCompare(b.date));
   }
   if (days.length === 0) return;
 
@@ -595,13 +611,24 @@ export function generateTimesheetPdf(project: Project, company: CompanyProfile, 
 
     week.days.forEach(dw => {
       const m = new Map<string, number>();
-      dw.tasks.forEach(t => t.workerLogs.forEach(l => {
-        const h = calculateWorkerHours(l);
-        const name = l.workerName || 'Unknown';
-        m.set(name, (m.get(name) || 0) + h);
-        weekWorkerMap.set(name, (weekWorkerMap.get(name) || 0) + h);
-        grandWorkerMap.set(name, (grandWorkerMap.get(name) || 0) + h);
-      }));
+      const plan = projectPlans.find(p => p.date === dw.date);
+      if (plan) {
+        // Planned hours win: count workers even when no tasks were recorded
+        plan.entries.forEach(e => {
+          const name = e.workerName || 'Unknown';
+          m.set(name, (m.get(name) || 0) + e.hours);
+          weekWorkerMap.set(name, (weekWorkerMap.get(name) || 0) + e.hours);
+          grandWorkerMap.set(name, (grandWorkerMap.get(name) || 0) + e.hours);
+        });
+      } else {
+        dw.tasks.forEach(t => t.workerLogs.forEach(l => {
+          const h = calculateWorkerHours(l);
+          const name = l.workerName || 'Unknown';
+          m.set(name, (m.get(name) || 0) + h);
+          weekWorkerMap.set(name, (weekWorkerMap.get(name) || 0) + h);
+          grandWorkerMap.set(name, (grandWorkerMap.get(name) || 0) + h);
+        }));
+      }
       dayTotals.set(dw.date, m);
     });
 
