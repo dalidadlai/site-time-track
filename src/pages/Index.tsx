@@ -90,7 +90,7 @@ const Index = () => {
           }}
           onEditDaywork={(id, data) => updateDaywork(project.id, id, data)}
           onDeleteDaywork={(id) => deleteDaywork(project.id, id)}
-          onGeneratePdf={(dayworkIds, siteManagerId, mode) => (mode === 'jobsheet' ? generateJobSheetPdf : mode === 'bymanager' ? generateManagerJobListPdf : mode === 'timesheet' ? generateTimesheetPdf : generateDayworkPdf)(project, company, siteManagers, dayworkIds, siteManagerId)}
+          onGeneratePdf={(dayworkIds, siteManagerId, mode) => (mode === 'jobsheet' ? generateJobSheetPdf : mode === 'bymanager' ? generateManagerJobListPdf : mode === 'timesheet' ? generateTimesheetPdf : generateDayworkPdf)(project, company, siteManagers, dayworkIds, siteManagerId, mode === 'timesheet' ? plans : undefined)}
         />
       </div>
     );
@@ -154,7 +154,7 @@ const Index = () => {
         }}
         onEditDaywork={(id, data) => updateDaywork(project.id, id, data)}
         onDeleteDaywork={(id) => deleteDaywork(project.id, id)}
-        onGeneratePdf={(dayworkIds, siteManagerId, mode) => (mode === 'jobsheet' ? generateJobSheetPdf : mode === 'bymanager' ? generateManagerJobListPdf : mode === 'timesheet' ? generateTimesheetPdf : generateDayworkPdf)(project, company, siteManagers, dayworkIds, siteManagerId)}
+        onGeneratePdf={(dayworkIds, siteManagerId, mode) => (mode === 'jobsheet' ? generateJobSheetPdf : mode === 'bymanager' ? generateManagerJobListPdf : mode === 'timesheet' ? generateTimesheetPdf : generateDayworkPdf)(project, company, siteManagers, dayworkIds, siteManagerId, mode === 'timesheet' ? plans : undefined)}
       />
     );
 
