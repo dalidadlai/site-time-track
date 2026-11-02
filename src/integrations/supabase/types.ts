@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance_links: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          owner_id: string
+          project_id: string
+          token: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          owner_id: string
+          project_id: string
+          token?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          owner_id?: string
+          project_id?: string
+          token?: string
+        }
+        Relationships: []
+      }
       user_data: {
         Row: {
           company: Json
@@ -47,12 +74,54 @@ export type Database = {
         }
         Relationships: []
       }
+      worker_attendance: {
+        Row: {
+          attendance_date: string
+          checked_in_at: string
+          id: string
+          owner_id: string
+          project_id: string
+          worker_id: string
+          worker_name: string
+        }
+        Insert: {
+          attendance_date: string
+          checked_in_at?: string
+          id?: string
+          owner_id: string
+          project_id: string
+          worker_id: string
+          worker_name: string
+        }
+        Update: {
+          attendance_date?: string
+          checked_in_at?: string
+          id?: string
+          owner_id?: string
+          project_id?: string
+          worker_id?: string
+          worker_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      attendance_checkin_info: { Args: { p_token: string }; Returns: Json }
+      list_project_attendance: {
+        Args: { p_date: string; p_project_id: string }
+        Returns: Json
+      }
+      manage_attendance_link: {
+        Args: { p_action?: string; p_project_id: string }
+        Returns: Json
+      }
+      submit_attendance_checkin: {
+        Args: { p_token: string; p_worker_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
