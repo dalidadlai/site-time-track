@@ -50,6 +50,10 @@
 }
 
 @layer utilities {
+  .attendance-qr {
+    background: hsl(var(--primary-foreground));
+    color: hsl(var(--foreground));
+  }
   .active-scale {
     @apply active:scale-[0.97] transition-transform;
   }

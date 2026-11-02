@@ -80,7 +80,16 @@ async function pushNow() {
     workers: readLocal(KEYS.workers, []),
     plans: readLocal(KEYS.plans, []),
   };
-  await supabase.from('user_data').upsert(payload, { onConflict: 'user_id' });
+  const { error } = await supabase.from('user_data').upsert(payload, { onConflict: 'user_id' });
+  if (error) throw error;
+}
+
+/** Ensure QR creation uses the current saved project and worker names. */
+export async function flushCloudPush() {
+  if (!currentUserId || syncing) throw new Error('Please wait for account sync');
+  if (pushTimer) clearTimeout(pushTimer);
+  pushTimer = null;
+  await pushNow();
 }
 
 /** Debounced upload of the whole local dataset. */
@@ -89,7 +98,7 @@ export function schedulePush() {
   if (pushTimer) clearTimeout(pushTimer);
   pushTimer = setTimeout(() => {
     pushTimer = null;
-    void pushNow();
+    void pushNow().catch(() => undefined);
   }, 800);
 }
 
