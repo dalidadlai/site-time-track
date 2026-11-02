@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 import { useQuery } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
 import { Copy, Loader2, QrCode, RefreshCw } from 'lucide-react';
@@ -15,7 +16,7 @@ import { toast } from 'sonner';
 export default function ProjectAttendance({ project, plans }: { project: Project; plans: DayPlan[] }) {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(attendanceDate());
-  const [link, setLink] = useState<{ token: string; active: boolean }>();
+  const [link, setLink] = useState<z.infer<typeof linkSchema>>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [confirmAction, setConfirmAction] = useState<'rotate' | 'disable'>();
