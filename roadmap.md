@@ -5,5 +5,5 @@
 - [x] Test owner/public flow and duplicate check-in protection.
 
 # Daily job list
-- [ ] Group same-date jobs in one expandable date card with daily totals.
-- [ ] Preserve individual edit, delete, signature and PDF actions; verify grouping.
+- [x] Group same-date jobs in one expandable date card with daily totals.
+- [x] Preserve individual edit, delete, signature and PDF actions; grouping tests and authenticated read-only browser fixture passed on mobile and desktop.
