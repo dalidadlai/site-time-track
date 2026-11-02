@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { ImproveWithAI } from './ImproveWithAI';
 import ProjectAttendance from './ProjectAttendance';
+import { groupDayworksByDate } from '@/lib/dayworkGroups';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
@@ -63,6 +64,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [editPo, setEditPo] = useState('');
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
 
   // Copy from previous state
   const [copyOpen, setCopyOpen] = useState(false);
@@ -189,7 +191,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
     return [...map.entries()].map(([key, days]) => ({
       key,
       label: format(new Date(key + '-01T00:00:00'), 'MMMM yyyy'),
-      days,
+      days: groupDayworksByDate(days),
       hours: days.reduce((sum, d) => sum + dayworkTotalHours(d), 0),
     }));
   }, [filteredDays]);
@@ -202,18 +204,11 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
       if (!dm) { dm = new Map<string, number>(); m.set(d.date, dm); }
       d.tasks.forEach(t => t.workerLogs.forEach(w => {
         const name = w.workerName || 'Worker';
-        dm!.set(name, (dm!.get(name) || 0) + calculateWorkerHours(w));
+        dm.set(name, (dm.get(name) || 0) + calculateWorkerHours(w));
       }));
     });
     return m;
   }, [project.dayworks]);
-
-  // Newest daywork id per date — the plan comparison shows once per day, on that card
-  const firstIdByDate = useMemo(() => {
-    const m = new Map<string, string>();
-    filteredDays.forEach(dw => { if (!m.has(dw.date)) m.set(dw.date, dw.id); });
-    return m;
-  }, [filteredDays]);
 
   const [openMonths, setOpenMonths] = useState<Set<string>>(() => {
     const cached = viewStateCache[project.id];
@@ -345,6 +340,23 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
     });
   };
 
+  const toggleDateSelection = (records: DayworkRecord[]) => {
+    setSelectedIds(previous => {
+      const next = new Set(previous);
+      const allSelected = records.every(record => next.has(record.id));
+      records.forEach(record => allSelected ? next.delete(record.id) : next.add(record.id));
+      return next;
+    });
+  };
+
+  const toggleDate = (date: string) => {
+    setExpandedDates(previous => {
+      const next = new Set(previous);
+      if (next.has(date)) next.delete(date); else next.add(date);
+      return next;
+    });
+  };
+
   const handleMultiPdf = () => {
     if (selectedIds.size === 0) return;
     onGeneratePdf(Array.from(selectedIds));
@@ -444,16 +456,21 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                   {group.days.length} day{group.days.length !== 1 ? 's' : ''} · {group.hours.toFixed(1)}h
                 </span>
               </button>
-              {isOpen && group.days.map((dw, i) => {
+              {isOpen && group.days.map(({ summary: dw, records }, i) => {
           const totalHrs = dayworkTotalHours(dw);
+          const expanded = expandedDates.has(dw.date);
+          const signedCount = records.filter(record => record.signatureData).length;
+          const allSelected = records.every(record => selectedIds.has(record.id));
+          const someSelected = records.some(record => selectedIds.has(record.id));
           return (
-            <div key={dw.id} className="bg-card rounded-lg shadow-sm border p-4 active-scale cursor-pointer animate-fade-in"
+            <div key={dw.date} className="bg-card rounded-lg shadow-sm border p-4 animate-fade-in"
               style={{ animationDelay: `${i * 60}ms` }}
-              onClick={() => selectMode ? toggleSelect(dw.id) : onSelectDaywork(dw.id)}>
-              <div className="flex items-center justify-between">
+              >
+              <div className="flex items-start justify-between gap-2 cursor-pointer"
+                onClick={() => selectMode ? toggleDateSelection(records) : records.length === 1 ? onSelectDaywork(dw.id) : toggleDate(dw.date)}>
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   {selectMode && (
-                    <Checkbox checked={selectedIds.has(dw.id)} onCheckedChange={() => toggleSelect(dw.id)}
+                    <Checkbox aria-label={`Select jobs for ${dw.date}`} checked={allSelected ? true : someSelected ? 'indeterminate' : false} onCheckedChange={() => toggleDateSelection(records)}
                       onClick={e => e.stopPropagation()} className="h-5 w-5" />
                   )}
                   <div className="min-w-0">
@@ -470,7 +487,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                       return null;
                     })()}
                     <div className="flex gap-4 mt-1.5">
-                      <span className="text-sm text-muted-foreground">{dw.tasks.length} task{dw.tasks.length !== 1 ? 's' : ''}</span>
+                      <span className="text-sm text-muted-foreground">{records.length} job{records.length !== 1 ? 's' : ''} · {dw.tasks.length} task{dw.tasks.length !== 1 ? 's' : ''}</span>
                       <span className="text-sm text-muted-foreground flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" /> {totalHrs.toFixed(1)}h
                       </span>
@@ -496,7 +513,6 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                     {(() => {
                       // Plan is per person per day — compare against the whole day's total
                       // across every daywork record on this date, shown once on the newest card.
-                      if (firstIdByDate.get(dw.date) !== dw.id) return null;
                       const plan = planByDate.get(dw.date);
                       if (!plan || plan.entries.length === 0) return null;
                       const actual = dayActualsByDate.get(dw.date);
@@ -528,31 +544,55 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
                       {dw.signatureData ? (
                         <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100 text-[10px] px-2 py-0">Signed</Badge>
                       ) : (
-                        <Badge className="bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-100 text-[10px] px-2 py-0">Pending</Badge>
+                        <Badge variant="outline" className="text-[10px] px-2 py-0">{signedCount > 0 ? `${signedCount}/${records.length} Signed` : 'Pending'}</Badge>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 shrink-0">
                   {!selectMode && (
                     <>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary"
+                      {records.length === 1 && <Button variant="ghost" size="icon" aria-label="Edit daywork" className="h-8 w-8 text-muted-foreground hover:text-primary"
                         onClick={(e) => { e.stopPropagation(); openEditDaywork(dw); }}>
                         <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary"
-                        onClick={(e) => { e.stopPropagation(); onGeneratePdf([dw.id]); }}>
+                      </Button>}
+                      <Button variant="ghost" size="icon" aria-label={`PDF for ${dw.date}`} className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={(e) => { e.stopPropagation(); onGeneratePdf(records.map(record => record.id)); }}>
                         <FileText className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      {records.length === 1 && <Button variant="ghost" size="icon" aria-label="Delete daywork" className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         onClick={(e) => { e.stopPropagation(); setDeleteId(dw.id); }}>
                         <Trash2 className="w-4 h-4" />
-                      </Button>
+                      </Button>}
                     </>
                   )}
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <Button variant="ghost" size="icon" aria-label={`${expanded ? 'Collapse' : 'Open'} jobs for ${dw.date}`} aria-expanded={records.length > 1 ? expanded : undefined}
+                    onClick={e => { e.stopPropagation(); selectMode ? toggleDateSelection(records) : records.length === 1 ? onSelectDaywork(dw.id) : toggleDate(dw.date); }}>
+                    {expanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                  </Button>
                 </div>
               </div>
+              {expanded && records.length > 1 && (
+                <div className="mt-3 border-t divide-y">
+                  {records.map((record, index) => (
+                    <div key={record.id} className="py-3 flex flex-wrap items-center gap-2">
+                      {selectMode && <Checkbox aria-label={`Select job ${index + 1}`} checked={selectedIds.has(record.id)} onCheckedChange={() => toggleSelect(record.id)} />}
+                      <Button variant="ghost" className="h-auto flex-1 min-w-0 text-left justify-start whitespace-normal px-0" onClick={() => onSelectDaywork(record.id)}>
+                        <div className="min-w-0">
+                          <p className="font-medium">{[...new Set(record.tasks.map(task => task.siteManagerName).filter(Boolean))].join(', ') || `Job ${index + 1}`}</p>
+                          <p className="text-xs text-muted-foreground font-normal break-words">{record.tasks.map(task => task.workArea || task.description.split('\n')[0]).filter(Boolean).join(' · ')}</p>
+                          <p className="text-xs text-muted-foreground font-normal">{record.tasks.length} tasks · {dayworkTotalHours(record).toFixed(1)}h · {record.signatureData ? 'Signed' : 'Pending'}</p>
+                        </div>
+                      </Button>
+                      {!selectMode && <div className="flex shrink-0">
+                        <Button variant="ghost" size="icon" aria-label={`Edit job ${index + 1}`} onClick={() => openEditDaywork(record)}><Pencil className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" aria-label={`PDF job ${index + 1}`} onClick={() => onGeneratePdf([record.id])}><FileText className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" aria-label={`Delete job ${index + 1}`} onClick={() => setDeleteId(record.id)}><Trash2 className="w-4 h-4" /></Button>
+                      </div>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
               })}
