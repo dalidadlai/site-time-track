@@ -1,11 +1,24 @@
 import { useState, useCallback } from 'react';
-import { CompanyProfile, SiteManager, PredefinedWorker, generateId } from '@/lib/types';
-import { loadCompany, saveCompany, loadSiteManagers, saveSiteManagers, loadWorkers, saveWorkers } from '@/lib/store';
+import { CompanyProfile, SiteManager, PredefinedWorker, SiteInstruction, generateId } from '@/lib/types';
+import { loadCompany, saveCompany, loadSiteManagers, saveSiteManagers, loadWorkers, saveWorkers, loadSiteInstructions, saveSiteInstructions } from '@/lib/store';
 
 export function useSettings() {
   const [company, setCompany] = useState<CompanyProfile>(loadCompany);
   const [siteManagers, setSiteManagers] = useState<SiteManager[]>(loadSiteManagers);
   const [workers, setWorkers] = useState<PredefinedWorker[]>(loadWorkers);
+  const [siteInstructions, setSiteInstructions] = useState<SiteInstruction[]>(loadSiteInstructions);
+  const saveInstruction = useCallback((item: SiteInstruction) => {
+    const updated = siteInstructions.some(i => i.id === item.id)
+      ? siteInstructions.map(i => i.id === item.id ? item : i)
+      : [item, ...siteInstructions];
+    setSiteInstructions(updated);
+    saveSiteInstructions(updated);
+  }, [siteInstructions]);
+  const deleteInstruction = useCallback((id: string) => {
+    const updated = siteInstructions.filter(i => i.id !== id);
+    setSiteInstructions(updated);
+    saveSiteInstructions(updated);
+  }, [siteInstructions]);
 
   const updateCompany = useCallback((c: CompanyProfile) => {
     setCompany(c);
@@ -37,6 +50,7 @@ export function useSettings() {
   }, [workers]);
 
   return {
+    siteInstructions, saveInstruction, deleteInstruction,
     company, updateCompany,
     siteManagers, addSiteManager, deleteSiteManager,
     workers, addWorker, deleteWorker,
