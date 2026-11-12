@@ -19,4 +19,4 @@
 
 # Mobile return position
 - [x] Preserve each screen's scroll position and project list expansions/filters when navigating back.
-- [ ] Verify regression tests and signed-in mobile navigation with existing records.
+- [x] Verify regression tests and signed-in mobile navigation with existing records; returning to the expanded mid-list day restored the exact scroll position, with no runtime errors.
