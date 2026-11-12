@@ -18,7 +18,7 @@ describe('task SI saves', () => {
     for (const [index, instruction] of instructions.entries()) {
       fireEvent.click(screen.getByRole('button', { name: 'Add Task' }));
       expect((screen.getByLabelText('Task SI') as HTMLSelectElement).value).toBe('');
-      fireEvent.change(screen.getByPlaceholderText('e.g.\n1. Strip formwork\n2. Clean and oil panels\n3. Refix to next pour'), { target: { value: `Task ${index + 1}` } });
+      fireEvent.change(screen.getByPlaceholderText(/Strip formwork/), { target: { value: `Task ${index + 1}` } });
       fireEvent.change(screen.getByLabelText('Task SI'), { target: { value: instruction.id } });
       fireEvent.click(screen.getByRole('button', { name: 'Save Task' }));
     }
