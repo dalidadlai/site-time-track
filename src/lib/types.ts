@@ -4,6 +4,8 @@ export interface CompanyProfile {
   email: string;
   phone: string;
   logo?: string;
+  /** Independent staff list for core drilling / cutting job sheets. */
+  coringStaff?: string[];
 }
 
 export interface SiteManager {
@@ -65,6 +67,53 @@ export interface Project {
   client: string;
   siteAddress: string;
   dayworks: DayworkRecord[];
+  kind?: ProjectKind;
+  jobSheets?: CoringJobSheet[];
+}
+
+export type ProjectKind = 'daywork' | 'coring';
+
+export interface CoringCut {
+  id: string;
+  cutId: string;
+  qty: string;
+  size: string;
+  depth: string;
+  setOut: boolean;
+  wall: boolean;
+  floor: boolean;
+  inverted: boolean;
+  excessReo: boolean;
+  trayDeck: boolean;
+}
+
+export const CORING_EQUIPMENT = [
+  ['cd', 'Core drill (CD)'], ['fc', 'Flush cut (FC)'], ['scan', 'Scan'], ['generator', 'Generator'],
+  ['hs', 'Hand saw (HS)'], ['rs', 'Ring saw (RS)'], ['wetvac', 'Wet-vac'], ['watertrailer', 'Water trailer'],
+  ['fs', 'Floor saw (FS)'], ['ch', 'Chase cut (CH)'], ['electric', 'Electric cutting'], ['slurry', 'Slurry removal'],
+] as const;
+
+export interface CoringJobSheet {
+  id: string;
+  date: string;
+  timeOn: string;
+  timeOff: string;
+  companyName: string;
+  siteAddress: string;
+  siteContact: string;
+  contactNumber: string;
+  operator: string;
+  assistant: string;
+  cuts: CoringCut[];
+  workDescription: string;
+  standby: string;
+  equipment: Record<string, string>;
+  operatorName: string;
+  operatorSignature?: string;
+  operatorDate: string;
+  clientName: string;
+  clientSignature?: string;
+  clientDate: string;
 }
 
 export interface PlanEntry {

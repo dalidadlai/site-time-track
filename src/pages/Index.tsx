@@ -7,6 +7,7 @@ import ProjectsList from '@/components/ProjectsList';
 import ProjectDetail from '@/components/ProjectDetail';
 import DayworkDetail from '@/components/DayworkDetail';
 import SettingsPage from '@/components/SettingsPage';
+import CoringProjectDetail from '@/components/CoringProjectDetail';
 import { generateDayworkPdf, generateJobSheetPdf, generateManagerJobListPdf, generateTimesheetPdf } from '@/lib/pdfReport';
 import { calculateWorkerHours } from '@/lib/types';
 
@@ -23,7 +24,7 @@ const Index = () => {
     return current.screen;
   });
   const {
-    projects, addProject, updateProject, deleteProject,
+    projects, saveJobSheet, deleteJobSheet, addProject, updateProject, deleteProject,
     addDaywork, addDayworkWithTasks, updateDaywork, deleteDaywork,
     addTask, updateTask, deleteTask, copyTaskToDate,
     addWorkerLog, addWorkerLogs, updateWorkerLog, deleteWorkerLog,
@@ -44,7 +45,7 @@ const Index = () => {
         <SettingsPage
           company={company} siteManagers={siteManagers} workers={workers}
           siteInstructions={siteInstructions} onSaveInstruction={saveInstruction} onDeleteInstruction={deleteInstruction}
-          onUpdateCompany={updateCompany}
+          onUpdateCompany={(c) => updateCompany({ ...c, coringStaff: company.coringStaff })}
           onAddSiteManager={addSiteManager} onDeleteSiteManager={deleteSiteManager}
           onAddWorker={addWorker} onDeleteWorker={deleteWorker}
           onBack={() => setView({ screen: 'projects' })}
@@ -58,8 +59,8 @@ const Index = () => {
       <div className="max-w-lg mx-auto">
         <ProjectsList
           projects={projects}
-          onAdd={(name, client, siteAddress) => {
-            const p = addProject(name, client, siteAddress);
+          onAdd={(name, client, siteAddress, kind) => {
+            const p = addProject(name, client, siteAddress, kind);
             setView({ screen: 'project', projectId: p.id });
           }}
           onSelect={(id) => setView({ screen: 'project', projectId: id })}
@@ -75,6 +76,21 @@ const Index = () => {
   if (!project) {
     setView({ screen: 'projects' });
     return null;
+  }
+
+  if (project.kind === 'coring') {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <CoringProjectDetail
+          project={project}
+          company={company}
+          onUpdateStaff={(coringStaff) => updateCompany({ ...company, coringStaff })}
+          onSave={(sheet) => saveJobSheet(project.id, sheet)}
+          onDelete={(id) => deleteJobSheet(project.id, id)}
+          onBack={() => setView({ screen: 'projects' })}
+        />
+      </div>
+    );
   }
 
   if (view.screen === 'project') {

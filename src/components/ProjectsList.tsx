@@ -3,7 +3,7 @@ import { Plus, HardHat, MapPin, User, ChevronRight, Trash2, Settings, Pencil } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Project } from '@/lib/types';
+import { Project, ProjectKind } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -15,7 +15,7 @@ import {
 
 interface ProjectsListProps {
   projects: Project[];
-  onAdd: (name: string, client: string, siteAddress: string) => void;
+  onAdd: (name: string, client: string, siteAddress: string, kind: ProjectKind) => void;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit: (id: string, updates: { name?: string; client?: string; siteAddress?: string }) => void;
@@ -27,6 +27,7 @@ export default function ProjectsList({ projects, onAdd, onSelect, onDelete, onEd
   const [name, setName] = useState('');
   const [client, setClient] = useState('');
   const [siteAddress, setSiteAddress] = useState('');
+  const [kind, setKind] = useState<ProjectKind>('daywork');
 
   const [editOpen, setEditOpen] = useState(false);
   const [editId, setEditId] = useState('');
@@ -38,8 +39,8 @@ export default function ProjectsList({ projects, onAdd, onSelect, onDelete, onEd
 
   const handleAdd = () => {
     if (!name.trim()) return;
-    onAdd(name.trim(), client.trim(), siteAddress.trim());
-    setName(''); setClient(''); setSiteAddress(''); setOpen(false);
+    onAdd(name.trim(), client.trim(), siteAddress.trim(), kind);
+    setKind('daywork'); setName(''); setClient(''); setSiteAddress(''); setOpen(false);
   };
 
   const openEdit = (p: Project) => {
@@ -106,7 +107,9 @@ export default function ProjectsList({ projects, onAdd, onSelect, onDelete, onEd
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1.5">
-                  {project.dayworks.length} daywork{project.dayworks.length !== 1 ? 's' : ''} recorded
+                  {project.kind === 'coring'
+                    ? `Core drilling / cutting · ${(project.jobSheets ?? []).length} job sheet${(project.jobSheets ?? []).length !== 1 ? 's' : ''}`
+                    : `${project.dayworks.length} daywork${project.dayworks.length !== 1 ? 's' : ''} recorded`}
                 </p>
               </div>
               <div className="flex items-center gap-1 ml-3">
@@ -135,6 +138,15 @@ export default function ProjectsList({ projects, onAdd, onSelect, onDelete, onEd
           <DialogContent className="mx-4 max-w-md">
             <DialogHeader><DialogTitle>New Project</DialogTitle></DialogHeader>
             <div className="space-y-4 mt-2">
+              <div>
+                <Label>Project Type</Label>
+                <div className="grid grid-cols-2 gap-2 mt-1.5">
+                  {([['daywork', 'Daywork'], ['coring', 'Core Drilling & Concrete Cutting']] as const).map(([k, l]) => (
+                    <button key={k} type="button" onClick={() => setKind(k)}
+                      className={`min-h-[52px] rounded-md border px-2 text-sm font-medium ${kind === k ? 'border-primary bg-primary text-primary-foreground' : 'bg-card'}`}>{l}</button>
+                  ))}
+                </div>
+              </div>
               <div><Label>Project Name *</Label><Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Tower Block A" className="mt-1.5" /></div>
               <div><Label>Client / Company</Label><Input value={client} onChange={e => setClient(e.target.value)} placeholder="e.g. ABC Construction" className="mt-1.5" /></div>
               <div><Label>Site Address</Label><Input value={siteAddress} onChange={e => setSiteAddress(e.target.value)} placeholder="e.g. 123 Main Street" className="mt-1.5" /></div>

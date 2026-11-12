@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 
 // Opens a print view. Falls back to a hidden iframe when popups are blocked
 // (common on mobile Safari / Chrome), so the PDF always renders.
-function printHtml(html: string) {
+export function printHtml(html: string) {
   try {
     const w = window.open('', '_blank');
     if (w && w.document) {
