@@ -14,5 +14,5 @@
 - [x] Verify saved SI and Daywork selection through tests and the signed-in app.
 
 # Task SI
-- [ ] Move SI selection into task add/edit descriptions and show each task's saved SI.
-- [ ] Preserve existing SI data and verify independent task saves and account sync.
+- [x] Move SI selection into task add/edit descriptions and show each task's saved SI.
+- [x] Preserve existing SI data and verify independent task saves and account sync; tests and signed-in mobile save/refresh passed, temporary records removed.
