@@ -75,6 +75,7 @@ export type ProjectKind = 'daywork' | 'coring';
 
 export interface CoringCut {
   id: string;
+  type?: 'drill' | 'cut';
   cutId: string;
   qty: string;
   size: string;
@@ -102,6 +103,8 @@ export interface CoringJobSheet {
   siteAddress: string;
   siteContact: string;
   contactNumber: string;
+  siteManager?: string;
+  location?: string;
   operator: string;
   assistant: string;
   cuts: CoringCut[];
