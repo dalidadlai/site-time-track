@@ -10,6 +10,15 @@ export const infoSchema = z.object({ projectName: z.string(), date: z.string(), 
 export const receiptSchema = z.object({ workerName: z.string(), date: z.string(), checkedInAt: z.string(), alreadyCheckedIn: z.boolean() });
 export const linkSchema = z.object({ token: tokenSchema, active: z.boolean() });
 
+export function attendanceLink(token: string) {
+  return `https://hcgdaywork.lovable.app/check-in/${tokenSchema.parse(token)}`;
+}
+
+export function attendanceWhatsAppShare(projectName: string, token: string) {
+  const message = `${projectName}\n每日签到 / Daily check-in\n${attendanceLink(token)}`;
+  return `https://wa.me/?text=${encodeURIComponent(message)}`;
+}
+
 export function attendanceDate(now = new Date()) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Pacific/Auckland', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
 }

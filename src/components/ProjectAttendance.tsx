@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { useQuery } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
-import { Copy, Loader2, QrCode, RefreshCw } from 'lucide-react';
+import { Copy, Loader2, MessageCircle, QrCode, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { flushCloudPush } from '@/lib/cloudSync';
-import { attendanceDate, attendanceSchema, attendanceTime, compareAttendance, linkSchema } from '@/lib/attendance';
+import { attendanceDate, attendanceLink, attendanceSchema, attendanceTime, attendanceWhatsAppShare, compareAttendance, linkSchema } from '@/lib/attendance';
 import type { DayPlan, Project } from '@/lib/types';
 import { toast } from 'sonner';
 
@@ -38,13 +38,14 @@ export default function ProjectAttendance({ project, plans }: { project: Project
   } });
   const plan = plans.find(p => p.projectId === project.id && p.date === date);
   const rows = compareAttendance(plan, query.data ?? []);
-  const checkinUrl = link ? `https://hcgdaywork.lovable.app/check-in/${link.token}` : '';
+  const checkinUrl = link ? attendanceLink(link.token) : '';
   return <>
     <Button variant="outline" size="sm" onClick={() => setOpen(true)} className="gap-1.5"><QrCode className="w-4 h-4" />Attendance / QR</Button>
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>Attendance · {project.name}</DialogTitle></DialogHeader>
       {error && <p role="alert" className="text-destructive text-sm">{error}</p>}
       {busy && <Loader2 className="animate-spin text-muted-foreground" />}
       {link?.active && <section className="space-y-3 border-b pb-4"><div className="attendance-qr mx-auto w-fit p-4 rounded-md"><QRCodeSVG value={checkinUrl} size={192} title={`${project.name} check-in`} /></div><p className="text-center text-xs text-muted-foreground">此二维码长期有效，无需每天更换。员工每天扫码签到，系统自动记录当天日期。</p><div className="flex flex-wrap justify-center gap-2"><Button variant="outline" size="sm" onClick={async () => { try { await navigator.clipboard.writeText(checkinUrl); toast.success('Check-in link copied'); } catch { toast.error('Could not copy link'); } }}><Copy className="w-4 h-4 mr-2" />Copy link</Button><Button variant="outline" size="sm" onClick={() => setConfirmAction('rotate')}>Replace QR</Button><Button variant="outline" size="sm" onClick={() => setConfirmAction('disable')}>Disable QR</Button></div></section>}
+      {link?.active && <Button variant="outline" className="gap-2" asChild><a href={attendanceWhatsAppShare(project.name, link.token)} target="_blank" rel="noopener noreferrer"><MessageCircle className="w-4 h-4" />分享到 WhatsApp</a></Button>}
       {link && !link.active && <Button disabled={busy} onClick={() => void manage('rotate')}>Enable new QR</Button>}
       {confirmAction && <div className="space-y-3 border-b pb-4"><p className="text-sm">{confirmAction === 'rotate' ? 'Replace this QR code? The previous code will stop working.' : 'Disable this QR code? Employees will no longer be able to check in.'}</p><div className="flex gap-2"><Button variant="destructive" disabled={busy} onClick={() => void manage(confirmAction)}>Confirm</Button><Button variant="outline" onClick={() => setConfirmAction(undefined)}>Cancel</Button></div></div>}
       {!link && !busy && error && <Button variant="outline" onClick={() => void manage()}>Retry</Button>}
