@@ -19,7 +19,7 @@
 
 # Project SI entry
 - [x] Add a visible SI management entry to project lists and desktop split views using the existing saved SI list.
-- [ ] Verify adding an SI from the project page and selecting it in a task on desktop and mobile.
+- [x] Verify project-page SI creation, refresh persistence and task selection on desktop, plus mobile management; temporary SI removed and 3 regression tests passed.
 
 # Mobile return position
 - [x] Preserve each screen's scroll position and project list expansions/filters when navigating back.
