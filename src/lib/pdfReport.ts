@@ -426,6 +426,8 @@ export function generateManagerJobListPdf(project: Project, company: CompanyProf
       .total-row { font-weight: 600; background: #faf6f1; }
       .mgr-section { page-break-after: always; }
       .mgr-section:last-child { page-break-after: avoid; }
+      tr { page-break-inside: avoid; break-inside: avoid; }
+      h3 { page-break-after: avoid; break-after: avoid; }
       .sig-section { margin-top: 16px; page-break-inside: avoid; break-inside: avoid; page-break-before: avoid; max-width: 320px; }
       .sig-line { border-bottom: 1px solid #333; height: 48px; margin-bottom: 6px; }
       .sig-img { max-height: 60px; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; }
