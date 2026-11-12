@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Project, DayworkRecord, Task, WorkerLog, generateId } from '@/lib/types';
+import { Project, ProjectKind, CoringJobSheet, DayworkRecord, Task, WorkerLog, generateId } from '@/lib/types';
 import { loadProjects, saveProjects } from '@/lib/store';
 
 export function useProjects() {
@@ -10,8 +10,8 @@ export function useProjects() {
     saveProjects(updated);
   }, []);
 
-  const addProject = useCallback((name: string, client: string, siteAddress: string) => {
-    const p: Project = { id: generateId(), name, client, siteAddress, dayworks: [] };
+  const addProject = useCallback((name: string, client: string, siteAddress: string, kind: ProjectKind = 'daywork') => {
+    const p: Project = { id: generateId(), name, client, siteAddress, dayworks: [], kind, ...(kind === 'coring' ? { jobSheets: [] } : {}) };
     persist([...projects, p]);
     return p;
   }, [projects, persist]);
@@ -22,6 +22,18 @@ export function useProjects() {
 
   const deleteProject = useCallback((id: string) => {
     persist(projects.filter(p => p.id !== id));
+  }, [projects, persist]);
+
+  const saveJobSheet = useCallback((projectId: string, sheet: CoringJobSheet) => {
+    persist(projects.map(p => {
+      if (p.id !== projectId) return p;
+      const list = p.jobSheets ?? [];
+      return { ...p, jobSheets: list.some(j => j.id === sheet.id) ? list.map(j => j.id === sheet.id ? sheet : j) : [...list, sheet] };
+    }));
+  }, [projects, persist]);
+
+  const deleteJobSheet = useCallback((projectId: string, sheetId: string) => {
+    persist(projects.map(p => p.id === projectId ? { ...p, jobSheets: (p.jobSheets ?? []).filter(j => j.id !== sheetId) } : p));
   }, [projects, persist]);
 
   const addDaywork = useCallback((projectId: string, data: Omit<DayworkRecord, 'id' | 'tasks'>) => {
@@ -134,7 +146,7 @@ export function useProjects() {
   }, [projects, persist]);
 
   return {
-    projects, addProject, updateProject, deleteProject,
+    projects, saveJobSheet, deleteJobSheet, addProject, updateProject, deleteProject,
     addDaywork, addDayworkWithTasks, updateDaywork, deleteDaywork,
     addTask, updateTask, deleteTask, copyTaskToDate,
     addWorkerLog, addWorkerLogs, updateWorkerLog, deleteWorkerLog,
