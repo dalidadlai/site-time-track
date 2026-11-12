@@ -5,4 +5,4 @@
 - Public check-in routes stay outside AuthGate so employees do not need an account.
 - WhatsApp group sharing uses a text deep link to the permanent public attendance URL, not provider credentials, because visitors initiate check-in themselves.
 - Group project daywork lists by date for display only; retain original record IDs and signatures so editing, deletion, and PDF selection preserve existing approvals.
-- Saved SI lists sync with the account dataset; Daywork stores an independent SI snapshot so list edits and deletions never rewrite recorded instructions.
+- Saved SI lists sync with the account dataset; each task stores an independent SI snapshot so list edits and deletions never rewrite recorded instructions. Retain legacy Daywork SI read-only without guessing which task it belongs to.

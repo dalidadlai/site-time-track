@@ -33,6 +33,7 @@ export interface Task {
   id: string;
   workArea: string;
   description: string;
+  siteInstruction?: SiteInstruction;
   siteManagerId: string;
   siteManagerName: string;
   workerLogs: WorkerLog[];

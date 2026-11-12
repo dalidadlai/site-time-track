@@ -12,3 +12,7 @@
 - [x] Add editable SI list with sender, number and content, synced across devices.
 - [x] Select and save SI on a Daywork without changing existing records or hours.
 - [x] Verify saved SI and Daywork selection through tests and the signed-in app.
+
+# Task SI
+- [ ] Move SI selection into task add/edit descriptions and show each task's saved SI.
+- [ ] Preserve existing SI data and verify independent task saves and account sync.
