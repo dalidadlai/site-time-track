@@ -7,3 +7,8 @@
 # Daily job list
 - [x] Group same-date jobs in one expandable date card with daily totals.
 - [x] Preserve individual edit, delete, signature and PDF actions; grouping tests and authenticated read-only browser fixture passed on mobile and desktop.
+
+# Saved SI
+- [ ] Add editable SI list with sender, number and content, synced across devices.
+- [ ] Select and save SI on a Daywork without changing existing records or hours.
+- [ ] Verify saved SI and Daywork selection through tests and the signed-in app.
