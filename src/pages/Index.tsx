@@ -117,7 +117,6 @@ const Index = () => {
       <DayworkDetail
         daywork={dw}
         siteInstructions={siteInstructions}
-        onSaveSI={item => updateDaywork(project.id, dw.id, { siteInstruction: item })}
         projectName={project.name}
         siteManagers={siteManagers}
         workers={workers}
