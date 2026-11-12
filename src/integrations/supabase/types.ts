@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_access: {
+        Row: {
+          email: string
+          requested_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          email: string
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          email?: string
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       attendance_links: {
         Row: {
           active: boolean
@@ -77,6 +104,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       worker_attendance: {
         Row: {
           attendance_date: string
@@ -113,6 +158,8 @@ export type Database = {
     }
     Functions: {
       attendance_checkin_info: { Args: { p_token: string }; Returns: Json }
+      is_access_admin: { Args: never; Returns: boolean }
+      is_account_approved: { Args: never; Returns: boolean }
       list_project_attendance: {
         Args: { p_date: string; p_project_id: string }
         Returns: Json
@@ -120,6 +167,10 @@ export type Database = {
       manage_attendance_link: {
         Args: { p_action?: string; p_project_id: string }
         Returns: Json
+      }
+      review_account_application: {
+        Args: { p_status: string; p_user_id: string }
+        Returns: undefined
       }
       submit_attendance_checkin: {
         Args: { p_token: string; p_worker_id: string }
