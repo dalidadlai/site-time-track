@@ -44,10 +44,18 @@ export interface DayworkRecord {
   siteContactName: string;
   siteContactPhone: string;
   purchaseOrder: string;
+  siteInstruction?: SiteInstruction;
   tasks: Task[];
   signatureData?: string;
   signatureName?: string;
   signatureDate?: string;
+}
+
+export interface SiteInstruction {
+  id: string;
+  sender: string;
+  number: string;
+  content: string;
 }
 
 export interface Project {

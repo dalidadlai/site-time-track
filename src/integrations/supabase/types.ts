@@ -47,6 +47,7 @@ export type Database = {
           created_at: string
           plans: Json
           projects: Json
+          site_instructions: Json
           site_managers: Json
           updated_at: string
           user_id: string
@@ -57,6 +58,7 @@ export type Database = {
           created_at?: string
           plans?: Json
           projects?: Json
+          site_instructions?: Json
           site_managers?: Json
           updated_at?: string
           user_id: string
@@ -67,6 +69,7 @@ export type Database = {
           created_at?: string
           plans?: Json
           projects?: Json
+          site_instructions?: Json
           site_managers?: Json
           updated_at?: string
           user_id?: string

@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ImproveWithAI } from './ImproveWithAI';
+import DayworkSI from './DayworkSI';
+import type { SiteInstruction } from '@/lib/types';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
@@ -45,6 +47,8 @@ interface DayworkDetailProps {
   projectName: string;
   siteManagers: SiteManager[];
   workers: PredefinedWorker[];
+  siteInstructions: SiteInstruction[];
+  onSaveSI: (item: SiteInstruction | undefined) => void;
   onBack: () => void;
   onAddTask: (task: Omit<Task, 'id' | 'workerLogs'>) => void;
   onEditTask: (taskId: string, updates: Partial<Omit<Task, 'id' | 'workerLogs'>>) => void;
@@ -64,7 +68,7 @@ interface DayworkDetailProps {
 }
 
 export default function DayworkDetail({
-  daywork, projectName, siteManagers, workers, onBack,
+  daywork, projectName, siteManagers, workers, siteInstructions, onSaveSI, onBack,
   onAddTask, onEditTask, onDeleteTask, onAddWorkerLog, onAddWorkerLogs, onUpdateWorkerLog, onDeleteWorkerLog,
   onUpdateSignature, onCopyTask, plan, prevPlan, onSavePlan, dayActuals,
 }: DayworkDetailProps) {
@@ -322,6 +326,7 @@ export default function DayworkDetail({
       </header>
 
       <div className="px-4 space-y-4">
+        <DayworkSI key={daywork.id} items={siteInstructions} saved={daywork.siteInstruction} onSave={onSaveSI} />
         {daywork.tasks.length === 0 && (
           <div className="text-center py-12 animate-fade-in">
             <p className="text-muted-foreground font-medium">No tasks yet</p>

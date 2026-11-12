@@ -1,4 +1,4 @@
-import { Project, CompanyProfile, SiteManager, PredefinedWorker, DayPlan } from './types';
+import { Project, CompanyProfile, SiteManager, PredefinedWorker, DayPlan, SiteInstruction } from './types';
 import { DEFAULT_LOGO } from './defaultLogo';
 import { schedulePush } from './cloudSync';
 
@@ -9,6 +9,7 @@ const KEYS = {
   siteManagers: 'dw-site-managers',
   workers: 'dw-workers',
   plans: 'dw-plans',
+  siteInstructions: 'dw-site-instructions',
 };
 
 function load<T>(key: string, fallback: T): T {
@@ -44,3 +45,6 @@ export const saveWorkers = (w: PredefinedWorker[]) => save(KEYS.workers, w);
 
 export const loadPlans = () => load<DayPlan[]>(KEYS.plans, []);
 export const savePlans = (p: DayPlan[]) => save(KEYS.plans, p);
+
+export const loadSiteInstructions = () => load<SiteInstruction[]>(KEYS.siteInstructions, []);
+export const saveSiteInstructions = (items: SiteInstruction[]) => save(KEYS.siteInstructions, items);

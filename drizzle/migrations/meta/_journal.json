@@ -8,6 +8,13 @@
       "when": 1793586296991,
       "tag": "0000_project_qr_attendance",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794472000823,
+      "tag": "0001_saved_site_instructions",
+      "breakpoints": true
     }
   ]
 }
