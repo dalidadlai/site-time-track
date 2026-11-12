@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useViewNavigation } from '@/hooks/useViewNavigation';
 import { useProjects } from '@/hooks/useProjects';
 import { useSettings } from '@/hooks/useSettings';
 import { usePlans } from '@/hooks/usePlans';
@@ -16,7 +17,11 @@ type View =
   | { screen: 'daywork'; projectId: string; dayworkId: string };
 
 const Index = () => {
-  const [view, setView] = useState<View>({ screen: 'projects' });
+  const [view, setView] = useViewNavigation<View>({ screen: 'projects' }, current => {
+    if (current.screen === 'daywork') return `daywork:${current.projectId}:${current.dayworkId}`;
+    if (current.screen === 'project') return `project:${current.projectId}`;
+    return current.screen;
+  });
   const {
     projects, addProject, updateProject, deleteProject,
     addDaywork, addDayworkWithTasks, updateDaywork, deleteDaywork,

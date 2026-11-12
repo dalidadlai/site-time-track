@@ -16,3 +16,7 @@
 # Task SI
 - [x] Move SI selection into task add/edit descriptions and show each task's saved SI.
 - [x] Preserve existing SI data and verify independent task saves and account sync; tests and signed-in mobile save/refresh passed, temporary records removed.
+
+# Mobile return position
+- [x] Preserve each screen's scroll position and project list expansions/filters when navigating back.
+- [x] Verify regression tests and signed-in mobile navigation with existing records; returning to the expanded mid-list day restored the exact scroll position, with no runtime errors.

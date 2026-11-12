@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
-// Remembers scroll position + expanded months per project across navigation
-const viewStateCache: Record<string, { scrollY: number; openMonths: string[] }> = {};
+// Retain list layout so returning to a saved scroll position shows the same jobs.
+const viewStateCache: Record<string, { openMonths: string[]; expandedDates: string[]; filterSmId: string }> = {};
 import { ArrowLeft, Plus, Calendar as CalendarIcon, Clock, ChevronRight, ChevronDown, Trash2, FileText, Pencil, Copy, CalendarDays, UserPlus, X, Users, ClipboardList, AlertTriangle } from 'lucide-react';
 import { startOfWeek, endOfWeek, subWeeks, startOfMonth, endOfMonth } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
@@ -64,7 +64,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
   const [editPo, setEditPo] = useState('');
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
+  const [expandedDates, setExpandedDates] = useState<Set<string>>(() => new Set(viewStateCache[project.id]?.expandedDates));
 
   // Copy from previous state
   const [copyOpen, setCopyOpen] = useState(false);
@@ -73,7 +73,7 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
 
   const [pdfSignedOnly, setPdfSignedOnly] = useState(false);
   const [pdfSmId, setPdfSmId] = useState<string>('');
-  const [filterSmId, setFilterSmId] = useState<string>('');
+  const [filterSmId, setFilterSmId] = useState<string>(() => viewStateCache[project.id]?.filterSmId ?? '');
   const [pdfMode, setPdfMode] = useState<'report' | 'jobsheet' | 'bymanager' | 'timesheet'>('report');
 
   // Planned hours state: check who is on site; hours auto-fill by weekday
@@ -216,22 +216,13 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
     return new Set(monthGroups.slice(0, 1).map(g => g.key));
   });
 
-  // Restore scroll position when coming back from a daywork, and remember it on leave
-  const openMonthsRef = useRef(openMonths);
-  openMonthsRef.current = openMonths;
-
   useEffect(() => {
-    const cached = viewStateCache[project.id];
-    if (cached?.scrollY) {
-      requestAnimationFrame(() => window.scrollTo(0, cached.scrollY));
-    }
-    return () => {
-      viewStateCache[project.id] = {
-        scrollY: window.scrollY,
-        openMonths: [...openMonthsRef.current],
-      };
+    viewStateCache[project.id] = {
+      openMonths: [...openMonths],
+      expandedDates: [...expandedDates],
+      filterSmId,
     };
-  }, [project.id]);
+  }, [project.id, openMonths, expandedDates, filterSmId]);
 
   const toggleMonth = (key: string) => {
     setOpenMonths(prev => {
