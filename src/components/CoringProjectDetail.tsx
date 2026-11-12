@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -26,13 +27,15 @@ interface Props {
 }
 
 const today = () => format(new Date(), 'yyyy-MM-dd');
-const emptyCut = (): CoringCut => ({ id: generateId(), cutId: '', qty: '', size: '', depth: '', setOut: false, wall: false, floor: false, inverted: false, excessReo: false, trayDeck: false });
+const emptyCut = (type: 'drill' | 'cut' = 'drill'): CoringCut => ({ id: generateId(), type, cutId: type === 'drill' ? 'CD' : 'CC', qty: '', size: '', depth: '', setOut: false, wall: false, floor: false, inverted: false, excessReo: false, trayDeck: false });
+const TIMES = Array.from({ length: 31 }, (_, i) => `${String(5 + Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'}`);
+const DRILL_SIZES = ['32mm', '42mm', '52mm', '65mm', '82mm', '102mm', '112mm', '127mm', '152mm', '162mm', '202mm', '250mm', '300mm'];
 const CUT_FLAGS = [['setOut', 'Set out'], ['wall', 'Wall'], ['floor', 'Floor'], ['inverted', 'Inverted'], ['excessReo', 'Excess reo'], ['trayDeck', 'Tray deck']] as const;
 
 function blankSheet(project: Project): CoringJobSheet {
   return {
     id: generateId(), date: today(), timeOn: '', timeOff: '', companyName: project.client, siteAddress: project.siteAddress,
-    siteContact: '', contactNumber: '', operator: '', assistant: '', cuts: [emptyCut()], workDescription: '', standby: '',
+    siteContact: '', contactNumber: '', operator: '', assistant: '', cuts: [], workDescription: '', standby: '',
     equipment: {}, operatorName: '', operatorDate: today(), clientName: '', clientDate: today(),
   };
 }
@@ -55,7 +58,7 @@ export default function CoringProjectDetail({ project, company, onUpdateStaff, o
   const save = () => {
     if (!form) return;
     if (!form.date) { toast({ title: 'Please choose a date' }); return; }
-    onSave({ ...form, cuts: form.cuts.filter(c => c.cutId || c.qty || c.size || c.depth || CUT_FLAGS.some(([k]) => c[k])) });
+    onSave({ ...form, siteAddress: project.siteAddress, cuts: form.cuts.filter(c => c.qty || c.size || c.depth || CUT_FLAGS.some(([k]) => c[k])) });
     setForm(null);
     toast({ title: '✓ Job sheet saved' });
   };
@@ -65,6 +68,13 @@ export default function CoringProjectDetail({ project, company, onUpdateStaff, o
     if (!list.length) { toast({ title: 'Select at least one job sheet' }); return; }
     generateCoringJobSheetPdf(project, company, list);
   };
+
+  const TimePick = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+    <Select value={value || undefined} onValueChange={onChange}>
+      <SelectTrigger className="mt-1"><SelectValue placeholder="--:--" /></SelectTrigger>
+      <SelectContent className="max-h-72">{TIMES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+    </Select>
+  );
 
   const StaffPick = ({ value, onChange, id }: { value: string; onChange: (v: string) => void; id: string }) => (
     <>
@@ -138,14 +148,13 @@ export default function CoringProjectDetail({ project, company, onUpdateStaff, o
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-2">
                 <div><Label>Date</Label><Input type="date" value={form.date} onChange={e => set('date', e.target.value)} className="mt-1" /></div>
-                <div><Label>Time on</Label><Input type="time" value={form.timeOn} onChange={e => set('timeOn', e.target.value)} className="mt-1" /></div>
-                <div><Label>Time off</Label><Input type="time" value={form.timeOff} onChange={e => set('timeOff', e.target.value)} className="mt-1" /></div>
+                <div><Label>Time on</Label><TimePick value={form.timeOn} onChange={v => set('timeOn', v)} /></div>
+                <div><Label>Time off</Label><TimePick value={form.timeOff} onChange={v => set('timeOff', v)} /></div>
               </div>
               <div className="grid sm:grid-cols-2 gap-3">
                 <div><Label>Company name</Label><Input value={form.companyName} onChange={e => set('companyName', e.target.value)} className="mt-1" /></div>
-                <div><Label>Site address</Label><Input value={form.siteAddress} onChange={e => set('siteAddress', e.target.value)} className="mt-1" /></div>
-                <div><Label>Site contact</Label><Input value={form.siteContact} onChange={e => set('siteContact', e.target.value)} className="mt-1" /></div>
-                <div><Label>Contact number</Label><Input type="tel" value={form.contactNumber} onChange={e => set('contactNumber', e.target.value)} className="mt-1" /></div>
+                <div><Label>Site manager</Label><Input value={form.siteManager ?? ''} onChange={e => set('siteManager', e.target.value)} className="mt-1" /></div>
+                <div className="sm:col-span-2"><Label>Location</Label><Input value={form.location ?? ''} onChange={e => set('location', e.target.value)} className="mt-1" placeholder="e.g. Level 1, pier wall" /></div>
                 <div><Label>HCG operator</Label><StaffPick id="op" value={form.operator} onChange={v => setForm(f => f && ({ ...f, operator: v, operatorName: f.operatorName || v }))} /></div>
                 <div><Label>Assistant / spotter</Label><StaffPick id="as" value={form.assistant} onChange={v => set('assistant', v)} /></div>
               </div>
@@ -153,24 +162,45 @@ export default function CoringProjectDetail({ project, company, onUpdateStaff, o
               <div>
                 <Label className="text-base">Description of works</Label>
                 <div className="space-y-2 mt-2">
-                  {form.cuts.map((c, i) => (
+                  {form.cuts.length === 0 && <p className="text-sm text-muted-foreground">No items yet — add a core drill or concrete cutting.</p>}
+                  {form.cuts.map((c, i) => {
+                    const drill = (c.type ?? 'drill') === 'drill';
+                    const custom = drill && c.size !== '' && !DRILL_SIZES.includes(c.size);
+                    return (
                     <div key={c.id} className="border rounded-md p-2 space-y-2">
-                      <div className="flex items-center justify-between"><span className="text-xs font-semibold text-muted-foreground">Line {i + 1}</span>
+                      <div className="flex items-center justify-between"><span className="text-sm font-semibold">{i + 1}. {drill ? 'Core drill' : 'Concrete cutting'}</span>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => set('cuts', form.cuts.filter(x => x.id !== c.id))}><X className="w-4 h-4" /></Button></div>
-                      <div className="grid grid-cols-4 gap-2">
-                        <div><Label className="text-xs">Cut ID</Label><Input value={c.cutId} onChange={e => setCut(c.id, { cutId: e.target.value })} placeholder="CD" /></div>
-                        <div><Label className="text-xs"># No</Label><Input inputMode="numeric" value={c.qty} onChange={e => setCut(c.id, { qty: e.target.value })} /></div>
-                        <div><Label className="text-xs">Ø / length</Label><Input value={c.size} onChange={e => setCut(c.id, { size: e.target.value })} placeholder="82mm" /></div>
+                      {drill && (
+                        <div>
+                          <Label className="text-xs">Hole size (Ø)</Label>
+                          <div className="flex flex-wrap gap-1.5 mt-1">
+                            {DRILL_SIZES.map(sz => (
+                              <button key={sz} type="button" onClick={() => setCut(c.id, { size: sz })}
+                                className={`rounded-full border px-3 py-1.5 text-xs ${c.size === sz ? 'bg-primary text-primary-foreground border-primary' : 'bg-card'}`}>{sz}</button>
+                            ))}
+                          </div>
+                          <Input className="mt-1.5 h-9" value={custom ? c.size : ''} onChange={e => setCut(c.id, { size: e.target.value })} placeholder="Other size, e.g. 75mm" />
+                        </div>
+                      )}
+                      <div className="grid grid-cols-3 gap-2">
+                        <div><Label className="text-xs">Qty</Label><Input inputMode="numeric" value={c.qty} onChange={e => setCut(c.id, { qty: e.target.value })} /></div>
+                        {!drill && <div><Label className="text-xs">Cut length</Label><Input value={c.size} onChange={e => setCut(c.id, { size: e.target.value })} placeholder="1200mm" /></div>}
                         <div><Label className="text-xs">Depth</Label><Input value={c.depth} onChange={e => setCut(c.id, { depth: e.target.value })} placeholder="150mm" /></div>
                       </div>
+                      <label className="flex items-center gap-2 text-sm font-medium min-h-[40px] rounded-md bg-secondary px-2">
+                        <Checkbox checked={c.excessReo} onCheckedChange={v => setCut(c.id, { excessReo: !!v })} />More than one layer of reo (excess reo)
+                      </label>
                       <div className="grid grid-cols-3 gap-2">
-                        {CUT_FLAGS.map(([k, l]) => (
+                        {CUT_FLAGS.filter(([k]) => k !== 'excessReo').map(([k, l]) => (
                           <label key={k} className="flex items-center gap-2 text-sm min-h-[36px]"><Checkbox checked={c[k]} onCheckedChange={v => setCut(c.id, { [k]: !!v })} />{l}</label>
                         ))}
                       </div>
                     </div>
-                  ))}
-                  <Button variant="outline" size="sm" className="gap-1" onClick={() => set('cuts', [...form.cuts, emptyCut()])}><Plus className="w-4 h-4" /> Add line</Button>
+                  );})}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" className="gap-1" onClick={() => set('cuts', [...form.cuts, emptyCut('drill')])}><Plus className="w-4 h-4" /> Core drill</Button>
+                    <Button variant="outline" className="gap-1" onClick={() => set('cuts', [...form.cuts, emptyCut('cut')])}><Plus className="w-4 h-4" /> Concrete cutting</Button>
+                  </div>
                 </div>
               </div>
 

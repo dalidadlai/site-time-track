@@ -25,8 +25,8 @@ function sheetHtml(s: CoringJobSheet, company: CompanyProfile) {
   <table class="grid">
     <tr><td class="w50"><span class="lbl">Company name:</span> ${esc(s.companyName)}</td><td><span class="lbl">Date:</span> ${fmtDate(s.date)} <span class="small">(Circle): ${days}</span></td></tr>
     <tr><td><span class="lbl">Site address:</span> ${esc(s.siteAddress)}</td><td><span class="lbl">Time on site:</span> ${esc(s.timeOn)} &nbsp; <span class="lbl">Time off site:</span> ${esc(s.timeOff)}</td></tr>
-    <tr><td><span class="lbl">Site contact:</span> ${esc(s.siteContact)}</td><td><span class="lbl">HCG operator:</span> ${esc(s.operator)}</td></tr>
-    <tr><td><span class="lbl">Contact number:</span> ${esc(s.contactNumber)}</td><td><span class="lbl">Assistant/spotter:</span> ${esc(s.assistant)}</td></tr>
+    <tr><td><span class="lbl">Site manager:</span> ${esc(s.siteManager || s.siteContact)}</td><td><span class="lbl">HCG operator:</span> ${esc(s.operator)}</td></tr>
+    <tr><td><span class="lbl">Location:</span> ${esc(s.location || s.contactNumber)}</td><td><span class="lbl">Assistant/spotter:</span> ${esc(s.assistant)}</td></tr>
   </table>
   <div class="bar">Description Of Works</div>
   <table class="grid cuts">
