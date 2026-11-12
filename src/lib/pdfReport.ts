@@ -64,15 +64,19 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
       h2 { font-size: 13px; font-weight: 600; margin: 16px 0 6px; border-bottom: 2px solid #c2702a; padding-bottom: 4px; }
       .meta { color: #555; font-size: 10px; line-height: 1.6; }
       .meta strong { color: #1a1a2e; }
-      table { width: 100%; border-collapse: collapse; margin: 6px 0 14px; }
-      th, td { border: 1px solid #ddd; padding: 5px 8px; text-align: left; }
+      table { width: 100%; border-collapse: collapse; margin: 0 0 8px; }
+      th, td { border: 1px solid #ddd; padding: 3px 8px; text-align: left; }
       th { background: #f5f0eb; font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
       .total-row { font-weight: 600; background: #faf6f1; }
       .hours { text-align: right; font-variant-numeric: tabular-nums; }
-      .task-header { background: #f8f4ef; padding: 8px 10px; border: 1px solid #e5ddd3; border-bottom: none; margin-top: 14px; }
+      .task-header { background: #f8f4ef; padding: 6px 10px; border: 1px solid #e5ddd3; border-bottom: none; margin-top: 14px; }
       .task-header .label { font-size: 9px; text-transform: uppercase; color: #888; letter-spacing: 0.5px; }
       .task-header .value { font-size: 11px; font-weight: 500; }
-      .sig-section { margin-top: 40px; page-break-inside: avoid; max-width: 320px; }
+      .sig-section { margin-top: 14px; page-break-inside: avoid; break-inside: avoid; max-width: 320px; }
+      .task-block { page-break-inside: avoid; break-inside: avoid; }
+      .closing { page-break-inside: avoid; break-inside: avoid; }
+      tr { page-break-inside: avoid; break-inside: avoid; }
+      h2 { page-break-after: avoid; break-after: avoid; }
       .sig-img { max-height: 60px; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; }
       .sig-line { border-bottom: 1px solid #333; height: 48px; margin-bottom: 6px; }
       .sig-label { font-size: 10px; color: #666; }
@@ -113,6 +117,7 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
       }).join('');
 
       return `
+        <div class="task-block">
         <div class="task-header">
           <div style="display:flex;gap:24px;flex-wrap:wrap;">
             <div><span class="label">Work Area</span><br><span class="value">${task.workArea || '—'}</span></div>
@@ -127,6 +132,7 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
             <tr class="total-row"><td>Task Total</td><td class="hours">${tHrs.toFixed(1)}</td></tr>
           </tbody>
         </table>
+        </div>
       `;
     }).join('');
 
@@ -162,6 +168,7 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
 
         ${taskSections}
 
+        <div class="closing">
         <div class="day-total">Day Total: ${totalHrs.toFixed(1)} hours</div>
 
         <div class="sig-section">
@@ -171,6 +178,7 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
             <div class="sig-label" style="margin-top:10px;">Name: ${dw.signatureName || '_______________________'}</div>
             <div class="sig-label" style="margin-top:6px;">Date: ${dw.signatureDate || '_______________________'}</div>
           </div>
+        </div>
         </div>
       </div>
     `;
@@ -280,7 +288,7 @@ export function generateJobSheetPdf(project: Project, company: CompanyProfile, s
       .hours { text-align: right; width: 70px; font-variant-numeric: tabular-nums; }
       .total-row { font-weight: 600; background: #faf6f1; }
       .day-block { page-break-inside: avoid; }
-      .sig-section { margin-top: 32px; page-break-inside: avoid; max-width: 320px; }
+      .sig-section { margin-top: 16px; page-break-inside: avoid; break-inside: avoid; page-break-before: avoid; max-width: 320px; }
       .sig-img { max-height: 60px; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; }
       .sig-line { border-bottom: 1px solid #333; height: 48px; margin-bottom: 6px; }
       .sig-label { font-size: 10px; color: #666; }
@@ -418,7 +426,9 @@ export function generateManagerJobListPdf(project: Project, company: CompanyProf
       .total-row { font-weight: 600; background: #faf6f1; }
       .mgr-section { page-break-after: always; }
       .mgr-section:last-child { page-break-after: avoid; }
-      .sig-section { margin-top: 28px; page-break-inside: avoid; max-width: 320px; }
+      tr { page-break-inside: avoid; break-inside: avoid; }
+      h3 { page-break-after: avoid; break-after: avoid; }
+      .sig-section { margin-top: 16px; page-break-inside: avoid; break-inside: avoid; page-break-before: avoid; max-width: 320px; }
       .sig-line { border-bottom: 1px solid #333; height: 48px; margin-bottom: 6px; }
       .sig-img { max-height: 60px; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; }
       .sig-label { font-size: 10px; color: #666; }
@@ -594,7 +604,7 @@ export function generateTimesheetPdf(project: Project, company: CompanyProfile, 
       .hours { text-align: right; width: 90px; font-variant-numeric: tabular-nums; }
       .total-row { font-weight: 600; background: #faf6f1; }
       .week-block { page-break-inside: avoid; }
-      .sig-section { margin-top: 28px; page-break-inside: avoid; max-width: 320px; }
+      .sig-section { margin-top: 16px; page-break-inside: avoid; break-inside: avoid; page-break-before: avoid; max-width: 320px; }
       .sig-line { border-bottom: 1px solid #333; height: 48px; margin-bottom: 6px; }
       .sig-label { font-size: 10px; color: #666; }
       @page { margin: 15mm 12mm; size: A4 landscape; }
