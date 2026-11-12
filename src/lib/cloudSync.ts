@@ -14,7 +14,15 @@ let pushTimer: ReturnType<typeof setTimeout> | null = null;
 let syncing = false;
 
 export function setSyncUser(userId: string | null) {
+  if (pushTimer) clearTimeout(pushTimer);
+  pushTimer = null;
   currentUserId = userId;
+}
+
+export function prepareLocalAccount(userId: string, allowLegacyData: boolean) {
+  const previousOwner = localStorage.getItem('dw-local-account');
+  if (previousOwner !== userId && (previousOwner !== null || !allowLegacyData)) clearLocalData();
+  localStorage.setItem('dw-local-account', userId);
 }
 
 function readLocal<T>(key: string, fallback: T): T {
@@ -40,7 +48,7 @@ export async function pullFromCloud(userId: string): Promise<void> {
 
     if (!data) {
       // First time on this account: upload whatever is on this device.
-      await supabase.from('user_data').insert({
+      const { error: insertError } = await supabase.from('user_data').insert({
         user_id: userId,
         projects: readLocal(KEYS.projects, []),
         company: readLocal(KEYS.company, {}),
@@ -49,6 +57,7 @@ export async function pullFromCloud(userId: string): Promise<void> {
         plans: readLocal(KEYS.plans, []),
         site_instructions: readLocal(KEYS.siteInstructions, []),
       });
+      if (insertError) throw insertError;
       return;
     }
 
@@ -61,6 +70,8 @@ export async function pullFromCloud(userId: string): Promise<void> {
       schedulePush();
       return;
     }
+
+    if (currentUserId !== userId) return;
 
     localStorage.setItem(KEYS.projects, JSON.stringify(cloudProjects));
     localStorage.setItem(KEYS.company, JSON.stringify(data.company ?? {}));

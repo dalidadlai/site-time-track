@@ -1,4 +1,6 @@
 # Architecture
+- Registration access is server-enforced through protected account_access and user_roles tables: only the owner admin can approve pending accounts; approval never widens account-scoped data policies. Existing accounts retain access.
+- Check approval before mounting or syncing account data, fail closed on errors, and scope local cached records to the signed-in account to prevent shared-device leakage.
 - Capture window scroll synchronously before screen navigation and restore per-screen positions after layout; preserve project list expansion/filter state so shorter detail screens cannot erase the return position.
 - QR attendance uses token-scoped database functions for public name lookup and check-in; direct attendance reads are owner-only to keep existing account data private.
 - Attendance is separate from plans and tasks; project dialogs poll records so employee check-ins appear without altering hours.

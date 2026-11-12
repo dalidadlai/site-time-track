@@ -15,6 +15,20 @@
       "when": 1794472000823,
       "tag": "0001_saved_site_instructions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794517137258,
+      "tag": "0002_registration_approval",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794517197117,
+      "tag": "0003_approval_attendance_function_guards",
+      "breakpoints": true
     }
   ]
 }

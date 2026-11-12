@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import SiteInstructions from './SiteInstructions';
+import AccountApprovals from './AccountApprovals';
 import { CompanyProfile, SiteManager, PredefinedWorker, SiteInstruction } from '@/lib/types';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -80,6 +81,7 @@ export default function SettingsPage({
       </header>
 
       <div className="px-4 space-y-6">
+        <AccountApprovals />
         <SiteInstructions items={siteInstructions} onSave={onSaveInstruction} onDelete={onDeleteInstruction} />
         {/* Company Profile */}
         <section className="bg-card rounded-lg border p-4 space-y-3">

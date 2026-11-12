@@ -20,3 +20,8 @@
 # Mobile return position
 - [x] Preserve each screen's scroll position and project list expansions/filters when navigating back.
 - [x] Verify regression tests and signed-in mobile navigation with existing records; returning to the expanded mid-list day restored the exact scroll position, with no runtime errors.
+
+# Registration approval
+- [ ] Enforce pending registrations and owner-only approval without exposing other accounts' records.
+- [ ] Add waiting screen and approval controls in Settings.
+- [ ] Verify owner access, pending denial, approval/rejection and account isolation.

@@ -23,7 +23,7 @@ export default function Auth() {
           options: { emailRedirectTo: `${window.location.origin}/` },
         });
         if (error) throw error;
-        toast.success('Account created. Check your email if confirmation is required.');
+        toast.success('Registration submitted for owner approval. Please also confirm your email if requested.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -44,7 +44,7 @@ export default function Auth() {
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Daywork Tracker</h1>
           <p className="text-sm text-muted-foreground">
-            {mode === 'signin' ? 'Sign in to sync your records across devices' : 'Create an account to sync your records'}
+            {mode === 'signin' ? 'Sign in to sync your records across devices' : 'Request an account — owner approval required'}
           </p>
         </div>
 
@@ -66,7 +66,7 @@ export default function Auth() {
           </div>
           <Button type="submit" className="w-full h-12 text-base" disabled={loading}>
             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {mode === 'signin' ? 'Sign in' : 'Create account'}
+            {mode === 'signin' ? 'Sign in' : 'Request account'}
           </Button>
         </form>
 
