@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ImproveWithAI } from './ImproveWithAI';
-import DayworkSI from './DayworkSI';
+import TaskSI from './TaskSI';
+import { instructionSnapshot } from '@/lib/siteInstructions';
 import type { SiteInstruction } from '@/lib/types';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -48,7 +49,6 @@ interface DayworkDetailProps {
   siteManagers: SiteManager[];
   workers: PredefinedWorker[];
   siteInstructions: SiteInstruction[];
-  onSaveSI: (item: SiteInstruction | undefined) => void;
   onBack: () => void;
   onAddTask: (task: Omit<Task, 'id' | 'workerLogs'>) => void;
   onEditTask: (taskId: string, updates: Partial<Omit<Task, 'id' | 'workerLogs'>>) => void;
@@ -68,13 +68,14 @@ interface DayworkDetailProps {
 }
 
 export default function DayworkDetail({
-  daywork, projectName, siteManagers, workers, siteInstructions, onSaveSI, onBack,
+  daywork, projectName, siteManagers, workers, siteInstructions, onBack,
   onAddTask, onEditTask, onDeleteTask, onAddWorkerLog, onAddWorkerLogs, onUpdateWorkerLog, onDeleteWorkerLog,
   onUpdateSignature, onCopyTask, plan, prevPlan, onSavePlan, dayActuals,
 }: DayworkDetailProps) {
   const [taskOpen, setTaskOpen] = useState(false);
   const [taskWorkArea, setTaskWorkArea] = useState('');
   const [taskDesc, setTaskDesc] = useState('');
+  const [taskSI, setTaskSI] = useState<SiteInstruction>();
   const [taskSmId, setTaskSmId] = useState('');
   const [workerDialogTask, setWorkerDialogTask] = useState<string | null>(null);
   const [selectedWorkerIds, setSelectedWorkerIds] = useState<Set<string>>(new Set());
@@ -193,6 +194,7 @@ export default function DayworkDetail({
   const [editTaskId, setEditTaskId] = useState('');
   const [editTaskWorkArea, setEditTaskWorkArea] = useState('');
   const [editTaskDesc, setEditTaskDesc] = useState('');
+  const [editTaskSI, setEditTaskSI] = useState<SiteInstruction>();
   const [editTaskSmId, setEditTaskSmId] = useState('');
 
   // Delete confirmations
@@ -213,10 +215,11 @@ export default function DayworkDetail({
     onAddTask({
       workArea: taskWorkArea.trim(),
       description: taskDesc.trim(),
+      siteInstruction: taskSI ? instructionSnapshot(taskSI) : undefined,
       siteManagerId: taskSmId,
       siteManagerName: sm?.name || '',
     });
-    setTaskWorkArea(''); setTaskDesc(''); setTaskSmId(''); setTaskOpen(false);
+    setTaskWorkArea(''); setTaskDesc(''); setTaskSI(undefined); setTaskSmId(''); setTaskOpen(false);
     toast({ title: '✓ Task saved', description: 'Task has been added successfully.' });
   };
 
@@ -224,6 +227,7 @@ export default function DayworkDetail({
     setEditTaskId(task.id);
     setEditTaskWorkArea(task.workArea);
     setEditTaskDesc(task.description);
+    setEditTaskSI(task.siteInstruction ? instructionSnapshot(task.siteInstruction) : undefined);
     setEditTaskSmId(task.siteManagerId);
     setEditTaskOpen(true);
   };
@@ -234,6 +238,7 @@ export default function DayworkDetail({
     onEditTask(editTaskId, {
       workArea: editTaskWorkArea.trim(),
       description: editTaskDesc.trim(),
+      siteInstruction: editTaskSI ? instructionSnapshot(editTaskSI) : undefined,
       siteManagerId: editTaskSmId,
       siteManagerName: sm?.name || '',
     });
@@ -326,7 +331,11 @@ export default function DayworkDetail({
       </header>
 
       <div className="px-4 space-y-4">
-        <DayworkSI key={daywork.id} items={siteInstructions} saved={daywork.siteInstruction} onSave={onSaveSI} />
+        {daywork.siteInstruction && <section className="space-y-1 border-b pb-3">
+          <p className="text-sm font-medium break-words">Previously saved Daywork SI: {daywork.siteInstruction.number}</p>
+          <p className="text-sm text-muted-foreground break-words">From: {daywork.siteInstruction.sender}</p>
+          <p className="text-sm whitespace-pre-wrap break-words">{daywork.siteInstruction.content}</p>
+        </section>}
         {daywork.tasks.length === 0 && (
           <div className="text-center py-12 animate-fade-in">
             <p className="text-muted-foreground font-medium">No tasks yet</p>
@@ -357,6 +366,7 @@ export default function DayworkDetail({
                     </span>
                   )}
                   <h3 className="font-semibold whitespace-pre-line">{task.description}</h3>
+                  {task.siteInstruction && <p className="text-sm text-muted-foreground break-words mt-1">SI {task.siteInstruction.number} · From: {task.siteInstruction.sender}</p>}
                   <div className="flex gap-3 mt-1">
                     <span className="text-sm text-muted-foreground">{task.workerLogs.length} worker{task.workerLogs.length !== 1 ? 's' : ''}</span>
                     <span className="text-sm text-muted-foreground">{tHrs.toFixed(1)}h</span>
@@ -392,6 +402,7 @@ export default function DayworkDetail({
 
               {isExpanded && (
                 <div className="border-t">
+                  {task.siteInstruction && <p className="px-4 py-3 text-sm whitespace-pre-wrap break-words">{task.siteInstruction.content}</p>}
                   {sm && (
                     <div className="px-4 py-2 bg-secondary/30 text-xs text-muted-foreground">
                       Site Manager: {sm.name}{sm.phone ? ` · ${sm.phone}` : ''}{sm.email ? ` · ${sm.email}` : ''}
@@ -496,6 +507,7 @@ export default function DayworkDetail({
               </div>
               <Textarea value={taskDesc} onChange={e => setTaskDesc(e.target.value)} placeholder={"e.g.\n1. Strip formwork\n2. Clean and oil panels\n3. Refix to next pour"} className="mt-1 text-base min-h-[100px]" />
             </div>
+            <TaskSI id="add-task-si" items={siteInstructions} value={taskSI} onChange={setTaskSI} />
             <div>
               <Label className="mb-2 block">Site Manager</Label>
               <div className="space-y-2">
@@ -544,6 +556,7 @@ export default function DayworkDetail({
               </div>
               <Textarea value={editTaskDesc} onChange={e => setEditTaskDesc(e.target.value)} className="mt-1 text-base min-h-[100px]" />
             </div>
+            <TaskSI id="edit-task-si" items={siteInstructions} value={editTaskSI} onChange={setEditTaskSI} />
             <div>
               <Label className="mb-2 block">Site Manager</Label>
               <div className="space-y-2">
