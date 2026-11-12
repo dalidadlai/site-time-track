@@ -17,6 +17,10 @@
 - [x] Move SI selection into task add/edit descriptions and show each task's saved SI.
 - [x] Preserve existing SI data and verify independent task saves and account sync; tests and signed-in mobile save/refresh passed, temporary records removed.
 
+# Project SI entry
+- [x] Add a visible SI management entry to project lists and desktop split views using the existing saved SI list.
+- [ ] Verify adding an SI from the project page and selecting it in a task on desktop and mobile.
+
 # Mobile return position
 - [x] Preserve each screen's scroll position and project list expansions/filters when navigating back.
 - [x] Verify regression tests and signed-in mobile navigation with existing records; returning to the expanded mid-list day restored the exact scroll position, with no runtime errors.

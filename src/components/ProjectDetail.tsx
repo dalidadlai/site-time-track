@@ -16,6 +16,8 @@ import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { ImproveWithAI } from './ImproveWithAI';
 import ProjectAttendance from './ProjectAttendance';
+import SiteInstructions from './SiteInstructions';
+import type { SiteInstruction } from '@/lib/types';
 import { groupDayworksByDate } from '@/lib/dayworkGroups';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -30,6 +32,9 @@ import {
 
 interface ProjectDetailProps {
   project: Project;
+  siteInstructions: SiteInstruction[];
+  onSaveInstruction: (item: SiteInstruction) => void;
+  onDeleteInstruction: (id: string) => void;
   siteManagers: SiteManager[];
   workers: PredefinedWorker[];
   plans: DayPlan[];
@@ -44,7 +49,7 @@ interface ProjectDetailProps {
   onNavigateToDaywork?: (dayworkId: string) => void;
 }
 
-export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddDaywork, onAddDayworkWithTasks, onEditDaywork, onDeleteDaywork, onGeneratePdf, siteManagers, workers, plans, onSavePlan }: ProjectDetailProps) {
+export default function ProjectDetail({ project, siteInstructions, onSaveInstruction, onDeleteInstruction, onBack, onSelectDaywork, onAddDaywork, onAddDayworkWithTasks, onEditDaywork, onDeleteDaywork, onGeneratePdf, siteManagers, workers, plans, onSavePlan }: ProjectDetailProps) {
   const [open, setOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [contactName, setContactName] = useState('');
@@ -393,7 +398,20 @@ export default function ProjectDetail({ project, onBack, onSelectDaywork, onAddD
       </header>
 
       <div className="px-4 space-y-3">
-        <ProjectAttendance project={project} plans={plans} />
+        <div className="flex flex-wrap items-center gap-2">
+          <ProjectAttendance project={project} plans={plans} />
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <FileText className="w-4 h-4" /> SI / Site Instructions ({siteInstructions.length})
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg max-h-[85dvh] overflow-y-auto">
+              <DialogHeader><DialogTitle>Manage SI</DialogTitle></DialogHeader>
+              <SiteInstructions items={siteInstructions} onSave={onSaveInstruction} onDelete={onDeleteInstruction} />
+            </DialogContent>
+          </Dialog>
+        </div>
         {sortedDays.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
