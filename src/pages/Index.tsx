@@ -28,6 +28,7 @@ const Index = () => {
     company, updateCompany,
     siteManagers, addSiteManager, deleteSiteManager,
     workers, addWorker, deleteWorker,
+    siteInstructions, saveInstruction, deleteInstruction,
   } = useSettings();
 
   const { plans, savePlan } = usePlans();
@@ -37,6 +38,7 @@ const Index = () => {
       <div className="max-w-lg mx-auto">
         <SettingsPage
           company={company} siteManagers={siteManagers} workers={workers}
+          siteInstructions={siteInstructions} onSaveInstruction={saveInstruction} onDeleteInstruction={deleteInstruction}
           onUpdateCompany={updateCompany}
           onAddSiteManager={addSiteManager} onDeleteSiteManager={deleteSiteManager}
           onAddWorker={addWorker} onDeleteWorker={deleteWorker}
@@ -114,6 +116,8 @@ const Index = () => {
     const detail = (
       <DayworkDetail
         daywork={dw}
+        siteInstructions={siteInstructions}
+        onSaveSI={item => updateDaywork(project.id, dw.id, { siteInstruction: item })}
         projectName={project.name}
         siteManagers={siteManagers}
         workers={workers}

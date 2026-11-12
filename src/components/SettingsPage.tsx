@@ -5,7 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CompanyProfile, SiteManager, PredefinedWorker } from '@/lib/types';
+import SiteInstructions from './SiteInstructions';
+import { CompanyProfile, SiteManager, PredefinedWorker, SiteInstruction } from '@/lib/types';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
@@ -14,6 +15,9 @@ interface SettingsPageProps {
   company: CompanyProfile;
   siteManagers: SiteManager[];
   workers: PredefinedWorker[];
+  siteInstructions: SiteInstruction[];
+  onSaveInstruction: (item: SiteInstruction) => void;
+  onDeleteInstruction: (id: string) => void;
   onUpdateCompany: (c: CompanyProfile) => void;
   onAddSiteManager: (sm: Omit<SiteManager, 'id'>) => void;
   onDeleteSiteManager: (id: string) => void;
@@ -23,7 +27,7 @@ interface SettingsPageProps {
 }
 
 export default function SettingsPage({
-  company, siteManagers, workers,
+  company, siteManagers, workers, siteInstructions, onSaveInstruction, onDeleteInstruction,
   onUpdateCompany, onAddSiteManager, onDeleteSiteManager,
   onAddWorker, onDeleteWorker, onBack,
 }: SettingsPageProps) {
@@ -76,6 +80,7 @@ export default function SettingsPage({
       </header>
 
       <div className="px-4 space-y-6">
+        <SiteInstructions items={siteInstructions} onSave={onSaveInstruction} onDelete={onDeleteInstruction} />
         {/* Company Profile */}
         <section className="bg-card rounded-lg border p-4 space-y-3">
           <div className="flex items-center gap-2 mb-1">
