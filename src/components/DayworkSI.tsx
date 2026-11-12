@@ -17,7 +17,7 @@ export default function DayworkSI({ items, saved, onSave }: {
   const preview = changed ? choices.find(i => i.id === selected) : saved;
   return <section className="space-y-2 border-t border-b py-4">
     <Label htmlFor="daywork-si">SI / Site Instruction</Label>
-    <Select value={selected} onValueChange={value => { setSelected(value); setChanged(true); }}>
+    <Select value={changed ? selected : (saved?.id ?? 'none')} onValueChange={value => { setSelected(value); setChanged(true); }}>
       <SelectTrigger id="daywork-si" className="min-h-11"><SelectValue placeholder="Select SI" /></SelectTrigger>
       <SelectContent className="max-w-[calc(100vw-2rem)]"><SelectItem value="none">No SI</SelectItem>{choices.map(item => <SelectItem key={item.id} value={item.id}><span className="break-words">{item.number} · {item.sender}</span></SelectItem>)}</SelectContent>
     </Select>
