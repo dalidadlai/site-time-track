@@ -11,3 +11,4 @@
 - Saved SI lists sync with the account dataset; each task stores an independent SI snapshot so list edits and deletions never rewrite recorded instructions. Retain legacy Daywork SI read-only without guessing which task it belongs to.
 - Project SI management reuses the account-wide SI editor and settings callbacks in both list and desktop split views, so saved options remain consistent with task selectors.
 - Coring/cutting projects store job sheets inside the project JSON (kind='coring') and their staff list in company.coringStaff, so cloud sync needs no schema change.
+- PWA updates: the service worker checks for new releases on open, focus and hourly, then auto-reloads, so installed/cached devices never stay on an old version.
