@@ -428,6 +428,7 @@ export function generateManagerJobListPdf(project: Project, company: CompanyProf
       .mgr-section:last-child { page-break-after: avoid; }
       tr { page-break-inside: avoid; break-inside: avoid; }
       h3 { page-break-after: avoid; break-after: avoid; }
+      .mgr-closing { page-break-inside: avoid; break-inside: avoid; margin-top: 10px; }
       .sig-section { margin-top: 16px; page-break-inside: avoid; break-inside: avoid; page-break-before: avoid; max-width: 320px; }
       .sig-line { border-bottom: 1px solid #333; height: 48px; margin-bottom: 6px; }
       .sig-img { max-height: 60px; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 6px; }
@@ -475,7 +476,7 @@ export function generateManagerJobListPdf(project: Project, company: CompanyProf
     }).join('');
 
     const workerSummary = `
-      <h3>Hours by Worker</h3>
+      <h3 style="margin-top:0;">Hours by Worker</h3>
       <table>
         <thead><tr><th>Worker</th><th class="hours">Total Hours</th></tr></thead>
         <tbody>
@@ -490,12 +491,14 @@ export function generateManagerJobListPdf(project: Project, company: CompanyProf
         <h2>Site Manager: ${mgrName}${sm?.phone ? ' · ' + sm.phone : ''}</h2>
         <div class="meta" style="margin-bottom:8px;"><strong>Dates:</strong> ${rangeLabel}</div>
         ${dayBlocks}
+        <div class="mgr-closing">
         ${workerSummary}
         <div class="sig-section">
           <div class="sig-line"></div>
           <div class="sig-label">Site Manager Signature (${mgrName})</div>
           <div class="sig-label" style="margin-top:10px;">Name: ${mgrName}</div>
           <div class="sig-label" style="margin-top:6px;">Date: _______________________</div>
+        </div>
         </div>
       </div>`;
   }).join('');
