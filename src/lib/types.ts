@@ -114,6 +114,7 @@ export interface CoringJobSheet {
   clientName: string;
   clientSignature?: string;
   clientDate: string;
+}
 
 export interface PlanEntry {
   workerId: string;
