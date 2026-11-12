@@ -22,6 +22,7 @@
 - [x] Verify regression tests and signed-in mobile navigation with existing records; returning to the expanded mid-list day restored the exact scroll position, with no runtime errors.
 
 # Registration approval
-- [ ] Enforce pending registrations and owner-only approval without exposing other accounts' records.
-- [ ] Add waiting screen and approval controls in Settings.
-- [ ] Verify owner access, pending denial, approval/rejection and account isolation.
+- [x] Enforce pending registrations and owner-only approval without exposing other accounts' records.
+- [x] Add waiting screen and approval controls in Settings.
+- [x] Verify owner sign-in and approval controls; 11 regression tests passed, existing approved accounts and owner role confirmed.
+- [ ] Verify new signup trigger, pending denial and approval/rejection end-to-end: blocked because temporary test-account creation was declined; no new account was created.
