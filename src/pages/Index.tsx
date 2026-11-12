@@ -98,6 +98,9 @@ const Index = () => {
       <div className="max-w-lg mx-auto">
         <ProjectDetail
           project={project}
+          siteInstructions={siteInstructions}
+          onSaveInstruction={saveInstruction}
+          onDeleteInstruction={deleteInstruction}
           siteManagers={siteManagers}
           workers={workers}
           plans={plans}
@@ -163,6 +166,9 @@ const Index = () => {
     const list = (
       <ProjectDetail
         project={project}
+        siteInstructions={siteInstructions}
+        onSaveInstruction={saveInstruction}
+        onDeleteInstruction={deleteInstruction}
         siteManagers={siteManagers}
         workers={workers}
         plans={plans}
