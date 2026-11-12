@@ -54,7 +54,7 @@ export function generateCoringJobSheetPdf(project: Project, company: CompanyProf
 <style>
 @page { size: A4 portrait; margin: 12mm; }
 * { box-sizing: border-box; }
-body { font-family: Arial, Helvetica, sans-serif; color: #111; margin: 0; font-size: 11px; }
+body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: Arial, Helvetica, sans-serif; color: #111; margin: 0; font-size: 11px; }
 .sheet { page-break-after: always; break-after: page; }
 .sheet:last-child { page-break-after: auto; break-after: auto; }
 .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
