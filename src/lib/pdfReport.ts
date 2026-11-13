@@ -1,5 +1,13 @@
 import { Project, CompanyProfile, SiteManager, DayPlan, calculateWorkerHours, taskTotalHours, dayworkTotalHours } from '@/lib/types';
 import { format } from 'date-fns';
+import type { Task } from '@/lib/types';
+
+const siEsc = (v: string) => (v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
+function siHtml(task: Task) {
+  const si = task.siteInstruction;
+  if (!si) return '';
+  return `<div style="margin-top:4px;padding:4px 6px;border-left:3px solid #999;background:#f5f5f5;font-size:11px;"><b>SI ${siEsc(si.number)}</b>${si.sender ? ` · From: ${siEsc(si.sender)}` : ''}${si.content ? `<div style="white-space:pre-line;">${siEsc(si.content)}</div>` : ''}</div>`;
+}
 
 // Opens a print view. Falls back to a hidden iframe when popups are blocked
 // (common on mobile Safari / Chrome), so the PDF always renders.
@@ -121,7 +129,7 @@ export function generateDayworkPdf(project: Project, company: CompanyProfile, si
         <div class="task-header">
           <div style="display:flex;gap:24px;flex-wrap:wrap;">
             <div><span class="label">Work Area</span><br><span class="value">${task.workArea || '—'}</span></div>
-            <div style="flex:1"><span class="label">Description</span><br><span class="value" style="white-space:pre-line;">${task.description}</span></div>
+            <div style="flex:1"><span class="label">Description</span><br><span class="value" style="white-space:pre-line;">${task.description}</span>${siHtml(task)}</div>
             ${sm ? `<div><span class="label">Site Manager</span><br><span class="value">${sm.name}${sm.phone ? ' · ' + sm.phone : ''}</span></div>` : ''}
           </div>
         </div>
@@ -306,7 +314,7 @@ export function generateJobSheetPdf(project: Project, company: CompanyProfile, s
       return `
         <tr>
           <td style="width:110px;">${task.workArea || '—'}</td>
-          <td><span style="white-space:pre-line;">${task.description}</span>${sm ? `<div style="color:#777;margin-top:3px;">Site Manager: ${sm.name}${sm.phone ? ' · ' + sm.phone : ''}</div>` : ''}</td>
+          <td><span style="white-space:pre-line;">${task.description}</span>${siHtml(task)}${sm ? `<div style="color:#777;margin-top:3px;">Site Manager: ${sm.name}${sm.phone ? ' · ' + sm.phone : ''}</div>` : ''}</td>
           <td style="padding:0;">
             <table style="margin:0;border:none;">${workerRows || '<tr><td>—</td><td class="hours">0.0</td></tr>'}
               <tr class="total-row"><td>Total</td><td class="hours">${taskTotalHours(task).toFixed(1)}</td></tr>
@@ -458,7 +466,7 @@ export function generateManagerJobListPdf(project: Project, company: CompanyProf
         return `
           <tr>
             <td style="width:110px;">${task.workArea || '—'}</td>
-            <td><span style="white-space:pre-line;">${task.description}</span></td>
+            <td><span style="white-space:pre-line;">${task.description}</span>${siHtml(task)}</td>
             <td style="padding:0;">
               <table style="margin:0;border:none;">${workerRows || '<tr><td>—</td><td class="hours">0.0</td></tr>'}
                 <tr class="total-row"><td>Total</td><td class="hours">${tHrs.toFixed(1)}</td></tr>
